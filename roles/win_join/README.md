@@ -11,7 +11,7 @@ Joins or removes **Windows** clients from a Samba 4 AD domain using the `microso
 
 ## Requirements
 
-- Ansible >= 2.14
+- Ansible >= 2.15
 - Collection `microsoft.ad` installed on the controller
 - WinRM or SSH configured on the Windows targets
 
@@ -22,12 +22,12 @@ Joins or removes **Windows** clients from a Samba 4 AD domain using the `microso
 | `win_join_state` | `domain` | `domain` to join, `workgroup` to leave |
 | `win_join_reboot` | `true` | Reboot the client after the operation |
 | `win_join_workgroup` | `WORKGROUP` | Workgroup name to use when `state=workgroup` |
-| `samba_ad_dc_realm` | — | AD realm in uppercase (required) |
-| `samba_ad_dc_search_domain` | — | DNS search domain (required) |
-| `samba_ad_dc_administrator_username` | `admin` | AD administrator username |
-| `samba_ad_dc_administrator_passwd` | `{{ ansible_password }}` | AD administrator password |
+| `win_join_realm` | — | AD realm in uppercase (required) |
+| `win_join_search_domain` | — | DNS search domain (required) |
+| `win_join_administrator_username` | `admin` | AD administrator username |
+| `win_join_administrator_passwd` | `{{ ansible_password }}` | AD administrator password |
 
-The `samba_ad_dc_*` variables are shared with `build_dc` and are typically defined in `group_vars/all.yaml`.
+The `win_join_realm`, `win_join_search_domain`, `win_join_administrator_username` and `win_join_administrator_passwd` variables hold the same values used by `build_dc` and are typically defined in `group_vars/all.yaml`.
 
 ## Example
 

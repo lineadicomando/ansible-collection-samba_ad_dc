@@ -1,25 +1,25 @@
-#SPDX-License-Identifier: MIT-0
+# SPDX-License-Identifier: MIT-0
 ---
 - name: Assert required variables
   ansible.builtin.assert:
     that:
       - win_join_state in ['domain', 'workgroup']
-      - samba_ad_dc_realm | default("", true) | length > 0
-      - samba_ad_dc_search_domain | default("", true) | length > 0
-      - samba_ad_dc_administrator_username | default("", true) | length > 0
-      - samba_ad_dc_administrator_passwd | default("", true) | length > 0
+      - win_join_realm | default("", true) | length > 0
+      - win_join_search_domain | default("", true) | length > 0
+      - win_join_administrator_username | default("", true) | length > 0
+      - win_join_administrator_passwd | default("", true) | length > 0
     fail_msg: |
       Missing or invalid variables in the win_join role.
       win_join_state must be 'domain' or 'workgroup' (current: {{ win_join_state }}).
-      Required in group_vars/all: samba_ad_dc_realm, samba_ad_dc_search_domain,
-      samba_ad_dc_administrator_username, samba_ad_dc_administrator_passwd.
+      Required in group_vars/all: win_join_realm, win_join_search_domain,
+      win_join_administrator_username, win_join_administrator_passwd.
     quiet: true
 
-- name: "{{ 'Join' if win_join_state == 'domain' else 'Leave' }} domain {{ samba_ad_dc_realm }}"
+- name: "Manage domain membership — {{ win_join_realm }} ({{ win_join_state }})"
   microsoft.ad.membership:
-    dns_domain_name: "{{ samba_ad_dc_search_domain }}"
-    domain_admin_user: "{{ samba_ad_dc_administrator_username }}@{{ samba_ad_dc_realm }}"
-    domain_admin_password: "{{ samba_ad_dc_administrator_passwd }}"
+    dns_domain_name: "{{ win_join_search_domain }}"
+    domain_admin_user: "{{ win_join_administrator_username }}@{{ win_join_realm }}"
+    domain_admin_password: "{{ win_join_administrator_passwd }}"
     state: "{{ win_join_state }}"
     reboot: "{{ win_join_reboot }}"
     workgroup_name: "{{ win_join_workgroup }}"

@@ -1,4 +1,4 @@
-#SPDX-License-Identifier: MIT-0
+# SPDX-License-Identifier: MIT-0
 ---
 - name: Make sure /etc/network/interfaces loads files from interfaces.d
   ansible.builtin.lineinfile:
@@ -13,8 +13,8 @@
 - name: Disable DHCP configuration in /etc/network/interfaces
   ansible.builtin.lineinfile:
     path: /etc/network/interfaces
-    regexp: "^iface {{ samba_ad_dc_ifname }} inet dhcp"
-    line: "# iface {{ samba_ad_dc_ifname }} inet dhcp"
+    regexp: "^iface {{ build_dc_ifname }} inet dhcp"
+    line: "# iface {{ build_dc_ifname }} inet dhcp"
     state: present
     backup: true
   notify: samba_ad_dc reboot
@@ -27,16 +27,16 @@
     mode: "0750"
     state: directory
 
-- name: "Configure the network interface {{ samba_ad_dc_ifname }}"
+- name: "Configure the network interface {{ build_dc_ifname }}"
   ansible.builtin.copy:
-    dest: "/etc/network/interfaces.d/{{ samba_ad_dc_ifname }}"
+    dest: "/etc/network/interfaces.d/{{ build_dc_ifname }}"
     content: |
-      iface {{ samba_ad_dc_ifname }} inet static
-          address {{ samba_ad_dc_address }}
-          netmask {{ samba_ad_dc_netmask }}
-          gateway {{ samba_ad_dc_gateway }}
-          dns-nameservers {{ samba_ad_dc_nameserver }}
-          dns-search {{ samba_ad_dc_search_domain }}
+      iface {{ build_dc_ifname }} inet static
+          address {{ build_dc_address }}
+          netmask {{ build_dc_netmask }}
+          gateway {{ build_dc_gateway }}
+          dns-nameservers {{ build_dc_nameserver }}
+          dns-search {{ build_dc_search_domain }}
     owner: root
     group: root
     mode: "0644"
@@ -59,8 +59,8 @@
   ansible.builtin.copy:
     dest: "/etc/resolv.conf"
     content: |
-      search {{ samba_ad_dc_search_domain }}
-      nameserver {{ samba_ad_dc_nameserver }}
+      search {{ build_dc_search_domain }}
+      nameserver {{ build_dc_nameserver }}
     owner: root
     group: root
     mode: "0644"

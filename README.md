@@ -45,17 +45,17 @@ ansible-galaxy collection install lineadicomando.samba_ad_dc
 
 ```yaml
 # host_vars/dc01.example.com.yaml
-samba_ad_dc_realm: EXAMPLE.COM
-samba_ad_dc_domain: EXAMPLE
-samba_ad_dc_fqdn: dc01.example.com
-samba_ad_dc_search_domain: example.com
-samba_ad_dc_nameserver: 192.168.1.1
-samba_ad_dc_address: 192.168.1.10
-samba_ad_dc_netmask: 255.255.255.0
-samba_ad_dc_gateway: 192.168.1.1
-samba_ad_dc_ifname: enp1s0
-samba_ad_dc_ntp_server: pool.ntp.org
-samba_ad_dc_ntp_allow_network: 192.168.1.0/24
+build_dc_realm: EXAMPLE.COM
+build_dc_domain: EXAMPLE
+build_dc_fqdn: dc01.example.com
+build_dc_search_domain: example.com
+build_dc_nameserver: 192.168.1.1
+build_dc_address: 192.168.1.10
+build_dc_netmask: 255.255.255.0
+build_dc_gateway: 192.168.1.1
+build_dc_ifname: enp1s0
+build_dc_ntp_server: pool.ntp.org
+build_dc_ntp_allow_network: 192.168.1.0/24
 ```
 
 ## Playbook example

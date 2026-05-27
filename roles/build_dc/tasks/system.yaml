@@ -1,8 +1,8 @@
-#SPDX-License-Identifier: MIT-0
+# SPDX-License-Identifier: MIT-0
 ---
 - name: Set the host name (fqdn)
   ansible.builtin.hostname:
-    name: "{{ samba_ad_dc_fqdn }}"
+    name: "{{ build_dc_fqdn }}"
     use: debian
 
 - name: Update apt cache

@@ -1,4 +1,4 @@
-#SPDX-License-Identifier: MIT-0
+# SPDX-License-Identifier: MIT-0
 ---
 galaxy_info:
   author: Alessandro Gagliano
@@ -11,7 +11,7 @@ galaxy_info:
         - all
   galaxy_tags:
     - windows
-    - active_directory
+    - activedirectory
     - domain
     - samba
 
