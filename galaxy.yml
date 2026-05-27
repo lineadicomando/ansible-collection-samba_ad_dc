@@ -14,10 +14,11 @@ license:
 tags:
   - samba
   - active_directory
-  - ldap
-  - kerberos
-  - debian
   - domain_controller
+  - kerberos
+  - cockpit
+  - windows
+  - debian
 repository: https://github.com/lineadicomando/ansible-collection-samba_ad_dc
 homepage: https://github.com/lineadicomando/ansible-collection-samba_ad_dc
 issues: https://github.com/lineadicomando/ansible-collection-samba_ad_dc/issues
