@@ -1,9 +1,9 @@
 # lineadicomando.samba_ad_dc
 
-[![GitHub tag](https://img.shields.io/github/v/tag/lineadicomando/cockpit-samba-ad-dc?label=version)](https://github.com/lineadicomando/cockpit-samba-ad-dc/tags)
+[![GitHub tag](https://img.shields.io/github/v/tag/lineadicomando/ansible-collection-samba_ad_dc?label=version)](https://github.com/lineadicomando/cockpit-samba-ad-dc/tags)
 [![License: Apache 2.0](https://img.shields.io/badge/license-Apache%202.0-blue)](./LICENSE)
-[![CI](https://github.com/lineadicomando/cockpit-samba-ad-dc/actions/workflows/ci.yml/badge.svg)](https://github.com/lineadicomando/cockpit-samba-ad-dc/actions/workflows/ci.yml)
-[![GitHub issues](https://img.shields.io/github/issues/lineadicomando/cockpit-samba-ad-dc)](https://github.com/lineadicomando/cockpit-samba-ad-dc/issues)
+[![CI](https://github.com/lineadicomando/ansible-collection-samba_ad_dc/actions/workflows/ci.yml/badge.svg)](https://github.com/lineadicomando/ansible-collection-samba_ad_dc/actions/workflows/ci.yml)
+[![GitHub issues](https://img.shields.io/github/issues/lineadicomando/ansible-collection-samba_ad_dc)](https://github.com/lineadicomando/ansible-collection-samba_ad_dc/issues)
 
 Ansible collection that provisions a **Samba 4 Active Directory Domain Controller** on Debian Trixie and makes it manageable from a browser — no CLI required for day-to-day operations.
 
