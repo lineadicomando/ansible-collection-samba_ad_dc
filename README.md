@@ -1,6 +1,6 @@
 # lineadicomando.samba_ad_dc
 
-[![GitHub tag](https://img.shields.io/github/v/tag/lineadicomando/ansible-collection-samba_ad_dc?label=version)](https://github.com/lineadicomando/cockpit-samba-ad-dc/tags)
+[![GitHub tag](https://img.shields.io/github/v/tag/lineadicomando/ansible-collection-samba_ad_dc?label=version)](https://github.com/lineadicomando/ansible-collection-samba_ad_dc/tags)
 [![License: Apache 2.0](https://img.shields.io/badge/license-Apache%202.0-blue)](./LICENSE)
 [![CI](https://github.com/lineadicomando/ansible-collection-samba_ad_dc/actions/workflows/ci.yml/badge.svg)](https://github.com/lineadicomando/ansible-collection-samba_ad_dc/actions/workflows/ci.yml)
 [![GitHub issues](https://img.shields.io/github/issues/lineadicomando/ansible-collection-samba_ad_dc)](https://github.com/lineadicomando/ansible-collection-samba_ad_dc/issues)
