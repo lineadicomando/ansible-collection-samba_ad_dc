@@ -30,6 +30,7 @@
 
 - name: Check if Samba is already configured as a domain controller
   ansible.builtin.shell: |
+    set -o pipefail
     grep -m1 "server role" /etc/samba/smb.conf | cut -d'=' -f2 | xargs
   args:
     executable: /bin/bash

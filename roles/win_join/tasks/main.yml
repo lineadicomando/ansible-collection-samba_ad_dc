@@ -15,7 +15,7 @@
       win_join_administrator_username, win_join_administrator_passwd.
     quiet: true
 
-- name: "Manage domain membership — {{ win_join_realm }} ({{ win_join_state }})"
+- name: "Manage domain membership — {{ win_join_realm }}"
   microsoft.ad.membership:
     dns_domain_name: "{{ win_join_search_domain }}"
     domain_admin_user: "{{ win_join_administrator_username }}@{{ win_join_realm }}"
