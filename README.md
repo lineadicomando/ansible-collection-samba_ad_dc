@@ -1,5 +1,10 @@
 # lineadicomando.samba_ad_dc
 
+[![GitHub tag](https://img.shields.io/github/v/tag/lineadicomando/cockpit-samba-ad-dc?label=version)](https://github.com/lineadicomando/cockpit-samba-ad-dc/tags)
+[![License: LGPL v2.1](https://img.shields.io/badge/license-LGPL%20v2.1-blue)](./LICENSE)
+[![CI](https://github.com/lineadicomando/cockpit-samba-ad-dc/actions/workflows/ci.yml/badge.svg)](https://github.com/lineadicomando/cockpit-samba-ad-dc/actions/workflows/ci.yml)
+[![GitHub issues](https://img.shields.io/github/issues/lineadicomando/cockpit-samba-ad-dc)](https://github.com/lineadicomando/cockpit-samba-ad-dc/issues)
+
 Ansible collection that provisions a **Samba 4 Active Directory Domain Controller** on Debian Trixie and makes it manageable from a browser — no CLI required for day-to-day operations.
 
 After provisioning, open `https://<dc-fqdn>:9090` to access **[cockpit-samba-ad-dc](https://github.com/lineadicomando/cockpit-samba-ad-dc)**: a Cockpit plugin built specifically for this collection that lets you manage users, groups, DNS records and monitor Kerberos and Samba services directly from the web.
