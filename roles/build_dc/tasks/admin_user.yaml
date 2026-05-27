@@ -1,0 +1,30 @@
+#SPDX-License-Identifier: MIT-0
+---
+- name: Check if admin user has already been created
+  ansible.builtin.stat:
+    path: /var/lib/samba/.admin_user_created
+  register: samba_ad_dc_admin_user_created
+
+- name: Create admin user
+  ansible.builtin.shell: |
+    samba-tool user create "$SAMBA_ADMIN_USER" "$SAMBA_ADMIN_PASS"
+  environment:
+    SAMBA_ADMIN_USER: "{{ samba_ad_dc_administrator_username }}"
+    SAMBA_ADMIN_PASS: "{{ samba_ad_dc_administrator_passwd }}"
+  no_log: true
+  when: not samba_ad_dc_admin_user_created.stat.exists
+
+- name: Add admin user to Domain Admins
+  ansible.builtin.command:
+    cmd: samba-tool group addmembers "Domain Admins" "{{ samba_ad_dc_administrator_username }}"
+  no_log: true
+  when: not samba_ad_dc_admin_user_created.stat.exists
+
+- name: Mark admin user as created
+  ansible.builtin.file:
+    path: /var/lib/samba/.admin_user_created
+    state: touch
+    owner: root
+    group: root
+    mode: "0600"
+  when: not samba_ad_dc_admin_user_created.stat.exists

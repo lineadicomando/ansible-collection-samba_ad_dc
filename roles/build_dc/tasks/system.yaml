@@ -1,0 +1,55 @@
+#SPDX-License-Identifier: MIT-0
+---
+- name: Set the host name (fqdn)
+  ansible.builtin.hostname:
+    name: "{{ samba_ad_dc_fqdn }}"
+    use: debian
+
+- name: Update apt cache
+  ansible.builtin.apt:
+    update_cache: true
+
+- name: Upgrade the OS (apt-get safe-upgrade)
+  ansible.builtin.apt:
+    upgrade: safe
+  notify: samba_ad_dc reboot
+
+- name: Installing essential packages on Debian 13
+  ansible.builtin.apt:
+    name:
+      - wget
+      - sudo
+      - tmux
+      - nmap
+      - telnet
+      - tcpdump
+      - rsync
+      - net-tools
+      - dnsutils
+      - btop
+      - apt-transport-https
+      - gnupg
+      - lsb-release
+      - curl
+      - neovim
+      - acl
+      - chrony
+      - htpdate
+      - cockpit
+      - pcp
+      - python3-pcp
+      - gawk
+      - libpcp-archive1
+      - libpcp-gui2
+      - libpcp-import1
+      - libpcp-mmv1
+      - libpcp-pmda-perl
+      - libpcp-pmda3
+      - libpcp-trace2
+      - libpcp-web1
+      - libpcp3
+      - libpfm4
+      - libsigsegv2
+      - pcp-conf
+      - starship
+    state: present

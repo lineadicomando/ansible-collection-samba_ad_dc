@@ -1,0 +1,18 @@
+#SPDX-License-Identifier: MIT-0
+---
+galaxy_info:
+  author: Alessandro Gagliano
+  description: Join or leave a Samba 4 AD domain on Windows targets using microsoft.ad.membership
+  license: Apache-2.0
+  min_ansible_version: "2.15"
+  platforms:
+    - name: Windows
+      versions:
+        - all
+  galaxy_tags:
+    - windows
+    - active_directory
+    - domain
+    - samba
+
+dependencies: []

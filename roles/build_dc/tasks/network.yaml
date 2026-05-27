@@ -1,0 +1,67 @@
+#SPDX-License-Identifier: MIT-0
+---
+- name: Make sure /etc/network/interfaces loads files from interfaces.d
+  ansible.builtin.lineinfile:
+    path: /etc/network/interfaces
+    line: source /etc/network/interfaces.d/*
+    state: present
+    create: true
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Disable DHCP configuration in /etc/network/interfaces
+  ansible.builtin.lineinfile:
+    path: /etc/network/interfaces
+    regexp: "^iface {{ samba_ad_dc_ifname }} inet dhcp"
+    line: "# iface {{ samba_ad_dc_ifname }} inet dhcp"
+    state: present
+    backup: true
+  notify: samba_ad_dc reboot
+
+- name: Directory for network interface configuration
+  ansible.builtin.file:
+    path: "/etc/network/interfaces.d"
+    owner: root
+    group: root
+    mode: "0750"
+    state: directory
+
+- name: "Configure the network interface {{ samba_ad_dc_ifname }}"
+  ansible.builtin.copy:
+    dest: "/etc/network/interfaces.d/{{ samba_ad_dc_ifname }}"
+    content: |
+      iface {{ samba_ad_dc_ifname }} inet static
+          address {{ samba_ad_dc_address }}
+          netmask {{ samba_ad_dc_netmask }}
+          gateway {{ samba_ad_dc_gateway }}
+          dns-nameservers {{ samba_ad_dc_nameserver }}
+          dns-search {{ samba_ad_dc_search_domain }}
+    owner: root
+    group: root
+    mode: "0644"
+  notify: samba_ad_dc reboot
+
+- name: Stop and mask systemd-resolved (incompatible with Samba AD DC DNS)
+  ansible.builtin.systemd:
+    name: systemd-resolved
+    state: stopped
+    enabled: false
+    masked: true
+  failed_when: false
+
+- name: Remove /etc/resolv.conf symlink if present
+  ansible.builtin.file:
+    path: /etc/resolv.conf
+    state: absent
+
+- name: Set /etc/resolv.conf
+  ansible.builtin.copy:
+    dest: "/etc/resolv.conf"
+    content: |
+      search {{ samba_ad_dc_search_domain }}
+      nameserver {{ samba_ad_dc_nameserver }}
+    owner: root
+    group: root
+    mode: "0644"
+  notify: samba_ad_dc reboot

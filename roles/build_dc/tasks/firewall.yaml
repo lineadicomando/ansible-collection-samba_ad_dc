@@ -1,0 +1,56 @@
+#SPDX-License-Identifier: MIT-0
+---
+- name: Firewall configuration file (/etc/nftables.conf)
+  ansible.builtin.copy:
+    content: |
+      #!/usr/sbin/nft -f
+
+      flush ruleset
+
+      table inet filter {
+        chain input {
+          type filter hook input priority 0; policy drop;
+
+          # Accept loopback
+          iif lo accept
+
+          # Allow existing and related connections
+          ct state established,related accept
+
+          # ICMP (ping)
+          ip protocol icmp accept
+          ip6 nexthdr icmpv6 accept
+
+          # Samba AD DC
+          tcp dport {53, 88, 135, 137, 138, 139, 389, 445, 464, 636, 3268, 3269, 49152-65535} accept
+          udp dport {53, 88, 123, 137, 138, 389, 445, 464} accept
+
+          # Cockpit
+          tcp dport 9090 accept
+
+          # SSH
+          tcp dport 22 accept
+
+          # Reject everything else
+          reject with icmpx type port-unreachable
+        }
+        chain forward {
+          type filter hook forward priority filter;
+        }
+        chain output {
+          type filter hook output priority filter;
+        }
+
+      }
+    dest: /etc/nftables.conf
+    owner: root
+    group: root
+    mode: "0640"
+    backup: true
+  notify: samba_ad_dc reload nftables
+
+- name: Enables the firewall service
+  ansible.builtin.systemd:
+    name: nftables
+    state: started
+    enabled: true

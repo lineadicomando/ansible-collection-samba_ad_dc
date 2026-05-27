@@ -1,0 +1,19 @@
+#SPDX-License-Identifier: MIT-0
+---
+# defaults file for samba_ad_dc
+# Tutti i valori devono essere forniti dall'inventario (host_vars).
+# Nessun valore concreto qui — il role fallisce esplicitamente se mancano.
+
+samba_ad_dc_realm: ~
+samba_ad_dc_domain: ~
+samba_ad_dc_fqdn: ~
+samba_ad_dc_search_domain: ~
+samba_ad_dc_nameserver: ~
+samba_ad_dc_address: ~
+samba_ad_dc_netmask: ~
+samba_ad_dc_gateway: ~
+samba_ad_dc_ifname: enp1s0
+samba_ad_dc_ntp_server: ~
+samba_ad_dc_ntp_allow_network: ~
+samba_ad_dc_administrator_passwd: "{{ ansible_password }}"
+samba_ad_dc_administrator_username: admin

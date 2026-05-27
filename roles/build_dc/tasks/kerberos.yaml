@@ -1,0 +1,26 @@
+#SPDX-License-Identifier: MIT-0
+---
+- name: Copy /etc/krb5.conf to /etc/krb5.conf.dist if it doesn't already exist
+  ansible.builtin.copy:
+    src: /etc/krb5.conf
+    dest: /etc/krb5.conf.dist
+    remote_src: true
+    force: false
+
+- name: Check the status of /etc/krb5.conf
+  ansible.builtin.stat:
+    path: /etc/krb5.conf
+    follow: false # importante per sapere se è un symlink
+  register: krb5_status
+
+- name: Delete the Kerberos configuration file if it is a normal file
+  ansible.builtin.file:
+    path: /etc/krb5.conf
+    state: absent
+  when: krb5_status.stat.exists and not krb5_status.stat.islnk
+
+- name: Create a symbolic link
+  ansible.builtin.file:
+    src: /var/lib/samba/private/krb5.conf
+    dest: /etc/krb5.conf
+    state: link

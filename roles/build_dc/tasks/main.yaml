@@ -1,0 +1,34 @@
+#SPDX-License-Identifier: MIT-0
+---
+- name: Assert required variables
+  ansible.builtin.import_tasks: assert.yaml
+
+- name: System setup
+  ansible.builtin.import_tasks: system.yaml
+
+- name: Bash customizations
+  ansible.builtin.import_tasks: bash.yaml
+
+- name: Samba provisioning
+  ansible.builtin.import_tasks: samba.yaml
+
+- name: Kerberos configuration
+  ansible.builtin.import_tasks: kerberos.yaml
+
+- name: Network configuration
+  ansible.builtin.import_tasks: network.yaml
+
+- name: Firewall configuration
+  ansible.builtin.import_tasks: firewall.yaml
+
+- name: Services activation
+  ansible.builtin.import_tasks: services.yaml
+
+- name: Passwords
+  ansible.builtin.import_tasks: passwords.yaml
+
+- name: Admin user
+  ansible.builtin.import_tasks: admin_user.yaml
+
+- name: Cockpit samba-ad-dc UI
+  ansible.builtin.import_tasks: cockpit_samba-ad-dc.yaml

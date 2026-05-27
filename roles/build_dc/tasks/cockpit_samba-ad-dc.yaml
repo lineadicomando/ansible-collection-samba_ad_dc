@@ -1,0 +1,29 @@
+#SPDX-License-Identifier: MIT-0
+---
+- name: Install cockpit-samba-ad-dc build dependencies
+  ansible.builtin.apt:
+    name:
+      - git
+      - nodejs
+      - npm
+      - make
+    state: present
+
+- name: Clone cockpit-samba-ad-dc repository
+  ansible.builtin.git:
+    repo: https://github.com/lineadicomando/cockpit-samba-ad-dc.git
+    dest: /tmp/cockpit-samba-ad-dc
+    version: HEAD
+
+- name: Install npm dependencies
+  ansible.builtin.command:
+    cmd: npm install
+    chdir: /tmp/cockpit-samba-ad-dc
+    creates: /tmp/cockpit-samba-ad-dc/node_modules
+
+- name: Build and install cockpit-samba-ad-dc
+  ansible.builtin.command:
+    cmd: make install
+    chdir: /tmp/cockpit-samba-ad-dc
+    creates: /usr/share/cockpit/samba-ad-dc
+  become: true
