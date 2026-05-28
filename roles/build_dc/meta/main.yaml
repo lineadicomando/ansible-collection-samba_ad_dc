@@ -1,9 +1,9 @@
-# SPDX-License-Identifier: MIT-0
+# SPDX-License-Identifier: GPL-3.0-or-later
 ---
 galaxy_info:
   author: Alessandro Gagliano
   description: Build and configure a Samba 4 Active Directory Domain Controller on Debian
-  license: Apache-2.0
+  license: GPL-3.0-or-later
   min_ansible_version: "2.15"
   platforms:
     - name: Debian

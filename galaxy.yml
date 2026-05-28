@@ -10,7 +10,7 @@ description: >
   Cockpit plugin that exposes AD users, groups, DNS and service controls at
   https://<dc>:9090 — no CLI required for day-to-day operations.
 license:
-  - Apache-2.0
+  - GPL-3.0-or-later
 tags:
   - samba
   - active_directory

@@ -55,4 +55,4 @@ To remove a client from the domain:
 
 ## License
 
-Apache-2.0
+GPL-3.0-or-later

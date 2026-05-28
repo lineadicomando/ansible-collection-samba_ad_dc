@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: MIT-0
+# SPDX-License-Identifier: GPL-3.0-or-later
 ---
 - name: Copy /etc/krb5.conf to /etc/krb5.conf.dist if it doesn't already exist
   ansible.builtin.copy:

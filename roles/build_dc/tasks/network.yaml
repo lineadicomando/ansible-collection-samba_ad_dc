@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: MIT-0
+# SPDX-License-Identifier: GPL-3.0-or-later
 ---
 - name: Make sure /etc/network/interfaces loads files from interfaces.d
   ansible.builtin.lineinfile:

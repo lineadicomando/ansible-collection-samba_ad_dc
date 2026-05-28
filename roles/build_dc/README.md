@@ -75,4 +75,4 @@ After provisioning, the management panel is available at `https://<dc-fqdn>:9090
 
 ## License
 
-Apache-2.0
+GPL-3.0-or-later
