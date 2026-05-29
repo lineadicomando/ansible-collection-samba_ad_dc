@@ -1,0 +1,15 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+---
+# defaults file for samba_tool
+# Role interface: object + action + arguments.
+# The MCP/dispatcher passes these values as extra-vars.
+
+samba_tool_object: ~          # user | group | computer | ou | backup | restore
+samba_tool_action: ~          # samba-tool verb: create, delete, list, show, ...
+samba_tool_args: {}           # dictionary of action-specific arguments
+
+# Path to the samba-tool executable on the target.
+samba_tool_bin: samba-tool
+
+# When true, hide the output of tasks that may contain passwords.
+samba_tool_no_log: true

@@ -1,0 +1,58 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+---
+# Organizational unit operations.
+#   read-only : list, listobjects
+#   mutating  : create, delete/absent  (idempotent via existence check)
+# The OU name is a DN relative to the domain base, e.g. "OU=Staff".
+
+- name: Validate ou action
+  ansible.builtin.assert:
+    that: samba_tool_action in _samba_tool_ou_actions
+    fail_msg: >-
+      Unsupported ou action '{{ samba_tool_action }}'.
+      Valid: {{ _samba_tool_ou_actions }}.
+    quiet: true
+  vars:
+    _samba_tool_ou_actions:
+      - list
+      - listobjects
+      - create
+      - delete
+      - absent
+
+- name: Read-only ou operations
+  when: samba_tool_action in ['list', 'listobjects']
+  block:
+    - name: Build argv for ou {{ samba_tool_action }}
+      ansible.builtin.set_fact:
+        _samba_tool_argv: >-
+          {{ ['ou', samba_tool_action]
+             + ([samba_tool_args.name] if samba_tool_action == 'listobjects' else []) }}
+
+    - name: Run read-only ou command
+      ansible.builtin.include_tasks: _run.yaml
+
+- name: Ensure ou present or absent
+  when: samba_tool_action in ['create', 'delete', 'absent']
+  block:
+    - name: List existing organizational units
+      ansible.builtin.command:
+        argv: "{{ [samba_tool_bin, 'ou', 'list'] }}"
+      register: _samba_tool_ou_list
+      changed_when: false
+
+    - name: Create ou {{ samba_tool_args.name }}
+      ansible.builtin.command:
+        argv: "{{ [samba_tool_bin, 'ou', 'create', samba_tool_args.name] }}"
+      when:
+        - samba_tool_action == 'create'
+        - samba_tool_args.name not in _samba_tool_ou_list.stdout_lines
+      changed_when: true
+
+    - name: Delete ou {{ samba_tool_args.name }}
+      ansible.builtin.command:
+        argv: "{{ [samba_tool_bin, 'ou', 'delete', samba_tool_args.name] }}"
+      when:
+        - samba_tool_action in ['delete', 'absent']
+        - samba_tool_args.name in _samba_tool_ou_list.stdout_lines
+      changed_when: true

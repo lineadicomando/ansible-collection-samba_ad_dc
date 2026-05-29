@@ -1,0 +1,30 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+---
+argument_specs:
+  main:
+    short_description: Manage a Samba AD DC object via samba-tool
+    description:
+      - Entry point for the samba_tool role. Dispatches an action against an
+        object (user, group, computer, ou) or runs a domain backup/restore.
+    options:
+      samba_tool_object:
+        description: The kind of object to act upon.
+        type: str
+        required: true
+        choices: [user, group, computer, ou]
+      samba_tool_action:
+        description: The samba-tool verb to run (e.g. create, delete, list, show, addmembers).
+        type: str
+        required: true
+      samba_tool_args:
+        description: Action-specific arguments (name, password, members, ...).
+        type: dict
+        default: {}
+      samba_tool_bin:
+        description: Path to the samba-tool executable on the target.
+        type: str
+        default: samba-tool
+      samba_tool_no_log:
+        description: Hide output of tasks that may contain passwords.
+        type: bool
+        default: true

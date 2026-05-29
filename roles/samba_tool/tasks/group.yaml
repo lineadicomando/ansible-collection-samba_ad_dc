@@ -1,0 +1,95 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+---
+# Group operations.
+#   read-only : list, listmembers, show
+#   mutating  : add/create, delete/absent, addmembers, removemembers
+# Idempotency is handled by comparing the current state before acting.
+
+- name: Validate group action
+  ansible.builtin.assert:
+    that: samba_tool_action in _samba_tool_group_actions
+    fail_msg: >-
+      Unsupported group action '{{ samba_tool_action }}'.
+      Valid: {{ _samba_tool_group_actions }}.
+    quiet: true
+  vars:
+    _samba_tool_group_actions:
+      - list
+      - listmembers
+      - show
+      - add
+      - create
+      - delete
+      - absent
+      - addmembers
+      - removemembers
+
+- name: Read-only group operations
+  when: samba_tool_action in ['list', 'listmembers', 'show']
+  block:
+    - name: Build argv for group {{ samba_tool_action }}
+      ansible.builtin.set_fact:
+        _samba_tool_argv: >-
+          {{ ['group', samba_tool_action]
+             + ([samba_tool_args.name] if samba_tool_action != 'list' else []) }}
+
+    - name: Run read-only group command
+      ansible.builtin.include_tasks: _run.yaml
+
+- name: Ensure group present or absent
+  when: samba_tool_action in ['add', 'create', 'delete', 'absent']
+  block:
+    - name: "Check whether group exists: {{ samba_tool_args.name }}"
+      ansible.builtin.command:
+        argv: "{{ [samba_tool_bin, 'group', 'show', samba_tool_args.name] }}"
+      register: _samba_tool_group_show
+      changed_when: false
+      failed_when: false
+
+    - name: Create group {{ samba_tool_args.name }}
+      ansible.builtin.command:
+        argv: "{{ [samba_tool_bin, 'group', 'add', samba_tool_args.name] }}"
+      when:
+        - samba_tool_action in ['add', 'create']
+        - _samba_tool_group_show.rc != 0
+      changed_when: true
+
+    - name: Delete group {{ samba_tool_args.name }}
+      ansible.builtin.command:
+        argv: "{{ [samba_tool_bin, 'group', 'delete', samba_tool_args.name] }}"
+      when:
+        - samba_tool_action in ['delete', 'absent']
+        - _samba_tool_group_show.rc == 0
+      changed_when: true
+
+- name: Reconcile group membership
+  when: samba_tool_action in ['addmembers', 'removemembers']
+  block:
+    - name: Normalize the desired member list
+      ansible.builtin.set_fact:
+        _samba_tool_members: >-
+          {{ samba_tool_args.members
+             if (samba_tool_args.members is sequence
+                 and samba_tool_args.members is not string)
+             else samba_tool_args.members.split(',') | map('trim') | list }}
+
+    - name: Read current members of {{ samba_tool_args.name }}
+      ansible.builtin.command:
+        argv: "{{ [samba_tool_bin, 'group', 'listmembers', samba_tool_args.name] }}"
+      register: _samba_tool_current_members
+      changed_when: false
+
+    - name: Compute the membership delta
+      ansible.builtin.set_fact:
+        _samba_tool_member_delta: >-
+          {{ (_samba_tool_members | difference(_samba_tool_current_members.stdout_lines))
+             if samba_tool_action == 'addmembers'
+             else (_samba_tool_members | intersect(_samba_tool_current_members.stdout_lines)) }}
+
+    - name: "Apply membership change: {{ samba_tool_action }}"
+      ansible.builtin.command:
+        argv: >-
+          {{ [samba_tool_bin, 'group', samba_tool_action, samba_tool_args.name,
+              _samba_tool_member_delta | join(',')] }}
+      when: _samba_tool_member_delta | length > 0
+      changed_when: true

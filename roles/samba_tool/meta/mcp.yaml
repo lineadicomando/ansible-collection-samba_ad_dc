@@ -1,0 +1,54 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+---
+# Self-describing catalog for the `samba` MCP tool.
+# Lists the manageable objects, the supported actions and the expected arguments.
+display_name: Samba AD DC
+notes: >-
+  Runs on the domain controller with elevated privileges. Read-only actions
+  (list, show, ...) never change state. Mutating actions on users are
+  idempotent via the samba_tool_user module; group/computer/ou reconcile state
+  before acting. Use preview for destructive actions (delete, restore).
+
+objects:
+  user:
+    description: Domain users (sAMAccountName).
+    actions:
+      list: { args: [], readonly: true }
+      show: { args: [name], readonly: true }
+      create:
+        args: [name, password, given_name, surname, mail, description, job_title, department, company, ou, must_change_password]
+        destructive: false
+      present: { args: [name, password], destructive: false }
+      delete: { args: [name], destructive: true }
+      absent: { args: [name], destructive: true }
+      enable: { args: [name], destructive: false }
+      disable: { args: [name], destructive: true }
+      setpassword: { args: [name, password], destructive: true }
+  group:
+    description: Security/distribution groups.
+    actions:
+      list: { args: [], readonly: true }
+      show: { args: [name], readonly: true }
+      listmembers: { args: [name], readonly: true }
+      add: { args: [name], destructive: false }
+      create: { args: [name], destructive: false }
+      delete: { args: [name], destructive: true }
+      absent: { args: [name], destructive: true }
+      addmembers: { args: [name, members], destructive: false }
+      removemembers: { args: [name, members], destructive: true }
+  computer:
+    description: Computer accounts.
+    actions:
+      list: { args: [], readonly: true }
+      show: { args: [name], readonly: true }
+      create: { args: [name], destructive: false }
+      delete: { args: [name], destructive: true }
+      absent: { args: [name], destructive: true }
+  ou:
+    description: Organizational units (DN relative to the domain base, e.g. "OU=Staff").
+    actions:
+      list: { args: [], readonly: true }
+      listobjects: { args: [name], readonly: true }
+      create: { args: [name], destructive: false }
+      delete: { args: [name], destructive: true }
+      absent: { args: [name], destructive: true }
