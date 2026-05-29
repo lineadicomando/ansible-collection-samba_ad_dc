@@ -27,6 +27,33 @@ After provisioning, open `https://<dc-fqdn>:9090` to access **[cockpit-samba-ad-
 | [`samba_win_join`](roles/samba_win_join/README.md) | Windows (all) | Join or remove Windows clients from the domain |
 | `deb_join` *(coming soon)* | Debian / Ubuntu | Join or remove Linux clients from the domain |
 
+## MCP service
+
+The collection ships machine-readable catalogs (`meta/mcp.yaml`) that expose two **MCP tools**, usable by any MCP-compatible client (Claude, Cursor, and similar):
+
+| Tool | Role | What it manages |
+|------|------|-----------------|
+| `samba` | `samba_tool` | Domain objects: users, groups, computers, OUs |
+| `samba_dc_backup` | `samba_dc_backup` | Domain backup (online/offline) and destructive restore |
+
+### `samba` — AD objects
+
+| Object | Available actions |
+|--------|------------------|
+| `user` | `list`, `show`, `create`, `present`, `delete`, `absent`, `enable`, `disable`, `setpassword` |
+| `group` | `list`, `show`, `listmembers`, `add`, `create`, `delete`, `absent`, `addmembers`, `removemembers` |
+| `computer` | `list`, `show`, `create`, `delete`, `absent` |
+| `ou` | `list`, `listobjects`, `create`, `delete`, `absent` |
+
+Read-only actions (`list`, `show`, `listmembers`, `listobjects`) never change state. Destructive actions (`delete`, `absent`, `setpassword`, `disable`) are flagged in the catalog and should be previewed before execution.
+
+### `samba_dc_backup` — Backup & restore
+
+| Object | Action | Note |
+|--------|--------|------|
+| `backup` | `run` | Archives the domain (online/offline) and/or user files |
+| `restore` | `run` | **Destructive** — rebuilds the DC from a backup; requires `restore_confirm: true` |
+
 ## Requirements
 
 - Ansible >= 2.15
