@@ -1,0 +1,66 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+---
+- name: Validate backup parameters
+  ansible.builtin.assert:
+    that:
+      - samba_dc_backup_targetdir is string
+      - samba_dc_backup_targetdir | length > 0
+      - samba_dc_backup_domain_type in ['online', 'offline']
+      - samba_dc_backup_domain or samba_dc_backup_files
+    fail_msg: >-
+      samba_dc_backup_targetdir is required and at least one of
+      samba_dc_backup_domain or samba_dc_backup_files must be true.
+    quiet: true
+
+- name: Ensure target directory exists
+  ansible.builtin.file:
+    path: "{{ samba_dc_backup_targetdir }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0700"
+
+# ── Domain backup ─────────────────────────────────────────────────────────────
+- name: Domain backup
+  when: samba_dc_backup_domain | bool
+  block:
+    - name: Build domain backup argv
+      ansible.builtin.set_fact:
+        _samba_dc_backup_argv: >-
+          {{ [samba_dc_backup_bin, 'domain', 'backup', samba_dc_backup_domain_type,
+              '--targetdir=' ~ samba_dc_backup_targetdir]
+             + (['--server=' ~ samba_dc_backup_domain_server]
+                if samba_dc_backup_domain_type == 'online' else [])
+             + (['-U' ~ samba_dc_backup_domain_username ~ '%' ~ (samba_dc_backup_domain_password | default(''))]
+                if samba_dc_backup_domain_username is not none else []) }}
+
+    - name: "Run domain backup ({{ samba_dc_backup_domain_type }})"
+      ansible.builtin.command:
+        argv: "{{ _samba_dc_backup_argv }}"
+      register: samba_dc_backup_domain_result
+      changed_when: true
+      no_log: "{{ samba_dc_backup_no_log and samba_dc_backup_domain_password is not none }}"
+
+# ── Files backup ──────────────────────────────────────────────────────────────
+- name: Files backup
+  when: samba_dc_backup_files | bool
+  block:
+    - name: Set files archive path
+      ansible.builtin.set_fact:
+        _samba_dc_backup_files_archive: >-
+          {{ samba_dc_backup_targetdir }}/files_{{ ansible_date_time.iso8601_basic_short }}.tar.gz
+
+    - name: Archive user files
+      ansible.builtin.archive:
+        path: "{{ samba_dc_backup_files_paths }}"
+        dest: "{{ _samba_dc_backup_files_archive }}"
+        format: gz
+      register: samba_dc_backup_files_result
+      changed_when: true
+
+    - name: Restrict archive permissions
+      ansible.builtin.file:
+        path: "{{ _samba_dc_backup_files_archive }}"
+        owner: root
+        group: root
+        mode: "0600"
