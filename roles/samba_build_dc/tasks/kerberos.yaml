@@ -12,13 +12,13 @@
   ansible.builtin.stat:
     path: /etc/krb5.conf
     follow: false # important to detect whether it is a symlink
-  register: build_dc_krb5_status
+  register: samba_build_dc_krb5_status
 
 - name: Delete the Kerberos configuration file if it is a normal file
   ansible.builtin.file:
     path: /etc/krb5.conf
     state: absent
-  when: build_dc_krb5_status.stat.exists and not build_dc_krb5_status.stat.islnk
+  when: samba_build_dc_krb5_status.stat.exists and not samba_build_dc_krb5_status.stat.islnk
 
 - name: Create a symbolic link
   ansible.builtin.file:

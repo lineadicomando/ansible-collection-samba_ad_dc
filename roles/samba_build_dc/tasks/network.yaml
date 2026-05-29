@@ -13,8 +13,8 @@
 - name: Disable DHCP configuration in /etc/network/interfaces
   ansible.builtin.lineinfile:
     path: /etc/network/interfaces
-    regexp: "^iface {{ build_dc_ifname }} inet dhcp"
-    line: "# iface {{ build_dc_ifname }} inet dhcp"
+    regexp: "^iface {{ samba_build_dc_ifname }} inet dhcp"
+    line: "# iface {{ samba_build_dc_ifname }} inet dhcp"
     state: present
     backup: true
   notify: samba_ad_dc reboot
@@ -27,16 +27,16 @@
     mode: "0750"
     state: directory
 
-- name: "Configure the network interface {{ build_dc_ifname }}"
+- name: "Configure the network interface {{ samba_build_dc_ifname }}"
   ansible.builtin.copy:
-    dest: "/etc/network/interfaces.d/{{ build_dc_ifname }}"
+    dest: "/etc/network/interfaces.d/{{ samba_build_dc_ifname }}"
     content: |
-      iface {{ build_dc_ifname }} inet static
-          address {{ build_dc_address }}
-          netmask {{ build_dc_netmask }}
-          gateway {{ build_dc_gateway }}
-          dns-nameservers {{ build_dc_nameserver }}
-          dns-search {{ build_dc_search_domain }}
+      iface {{ samba_build_dc_ifname }} inet static
+          address {{ samba_build_dc_address }}
+          netmask {{ samba_build_dc_netmask }}
+          gateway {{ samba_build_dc_gateway }}
+          dns-nameservers {{ samba_build_dc_nameserver }}
+          dns-search {{ samba_build_dc_search_domain }}
     owner: root
     group: root
     mode: "0644"
@@ -59,8 +59,8 @@
   ansible.builtin.copy:
     dest: "/etc/resolv.conf"
     content: |
-      search {{ build_dc_search_domain }}
-      nameserver {{ build_dc_nameserver }}
+      search {{ samba_build_dc_search_domain }}
+      nameserver {{ samba_build_dc_nameserver }}
     owner: root
     group: root
     mode: "0644"

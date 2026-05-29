@@ -1,4 +1,4 @@
-# build_dc
+# samba_build_dc
 
 Full provisioning of a **Samba 4 Active Directory Domain Controller** on Debian Trixie (13).
 
@@ -26,19 +26,19 @@ All variables are mandatory and must be defined in `host_vars/<hostname>.yaml`. 
 
 | Variable | Description |
 |----------|-------------|
-| `build_dc_realm` | Kerberos realm in uppercase (e.g. `EXAMPLE.COM`) |
-| `build_dc_domain` | NetBIOS domain name (e.g. `EXAMPLE`) |
-| `build_dc_fqdn` | DC fully qualified domain name (e.g. `dc01.example.com`) |
-| `build_dc_search_domain` | DNS search domain (e.g. `example.com`) |
-| `build_dc_nameserver` | Upstream nameserver IP (used before provisioning) |
-| `build_dc_address` | Static IP address of the DC |
-| `build_dc_netmask` | Netmask (e.g. `255.255.255.0`) |
-| `build_dc_gateway` | Default gateway |
-| `build_dc_ifname` | Network interface name (e.g. `enp1s0`) |
-| `build_dc_ntp_server` | Upstream NTP server (e.g. `pool.ntp.org`) |
-| `build_dc_ntp_allow_network` | Network allowed to use the DC as NTP source (e.g. `192.168.1.0/24`) |
-| `build_dc_administrator_username` | AD admin username (default: `admin`) |
-| `build_dc_administrator_passwd` | AD admin password (default: `{{ ansible_password }}`) |
+| `samba_build_dc_realm` | Kerberos realm in uppercase (e.g. `EXAMPLE.COM`) |
+| `samba_build_dc_domain` | NetBIOS domain name (e.g. `EXAMPLE`) |
+| `samba_build_dc_fqdn` | DC fully qualified domain name (e.g. `dc01.example.com`) |
+| `samba_build_dc_search_domain` | DNS search domain (e.g. `example.com`) |
+| `samba_build_dc_nameserver` | Upstream nameserver IP (used before provisioning) |
+| `samba_build_dc_address` | Static IP address of the DC |
+| `samba_build_dc_netmask` | Netmask (e.g. `255.255.255.0`) |
+| `samba_build_dc_gateway` | Default gateway |
+| `samba_build_dc_ifname` | Network interface name (e.g. `enp1s0`) |
+| `samba_build_dc_ntp_server` | Upstream NTP server (e.g. `pool.ntp.org`) |
+| `samba_build_dc_ntp_allow_network` | Network allowed to use the DC as NTP source (e.g. `192.168.1.0/24`) |
+| `samba_build_dc_administrator_username` | AD admin username (default: `admin`) |
+| `samba_build_dc_administrator_passwd` | AD admin password (default: `{{ ansible_password }}`) |
 
 ## Example
 
@@ -47,22 +47,22 @@ All variables are mandatory and must be defined in `host_vars/<hostname>.yaml`. 
   hosts: dc
   become: true
   roles:
-    - lineadicomando.samba_ad_dc.build_dc
+    - lineadicomando.samba_ad_dc.samba_build_dc
 ```
 
 ```yaml
 # host_vars/dc01.example.com.yaml
-build_dc_realm: EXAMPLE.COM
-build_dc_domain: EXAMPLE
-build_dc_fqdn: dc01.example.com
-build_dc_search_domain: example.com
-build_dc_nameserver: 192.168.1.1
-build_dc_address: 192.168.1.10
-build_dc_netmask: 255.255.255.0
-build_dc_gateway: 192.168.1.1
-build_dc_ifname: enp1s0
-build_dc_ntp_server: pool.ntp.org
-build_dc_ntp_allow_network: 192.168.1.0/24
+samba_build_dc_realm: EXAMPLE.COM
+samba_build_dc_domain: EXAMPLE
+samba_build_dc_fqdn: dc01.example.com
+samba_build_dc_search_domain: example.com
+samba_build_dc_nameserver: 192.168.1.1
+samba_build_dc_address: 192.168.1.10
+samba_build_dc_netmask: 255.255.255.0
+samba_build_dc_gateway: 192.168.1.1
+samba_build_dc_ifname: enp1s0
+samba_build_dc_ntp_server: pool.ntp.org
+samba_build_dc_ntp_allow_network: 192.168.1.0/24
 ```
 
 ## Cockpit

@@ -19,14 +19,14 @@
 
 - name: Hiding Samba and Winbind Services
   ansible.builtin.systemd:
-    name: "{{ build_dc_svc_item }}"
+    name: "{{ samba_build_dc_svc_item }}"
     masked: true
   loop:
     - winbind
     - nmbd
     - smbd
   loop_control:
-    loop_var: build_dc_svc_item
+    loop_var: samba_build_dc_svc_item
 
 - name: Check if Samba is already configured as a domain controller
   ansible.builtin.shell: |
@@ -34,17 +34,17 @@
     grep -m1 "server role" /etc/samba/smb.conf | cut -d'=' -f2 | xargs
   args:
     executable: /bin/bash
-  register: build_dc_smb_check
+  register: samba_build_dc_smb_check
   failed_when: false
   changed_when: false
 
 - name: Set operating variables
   ansible.builtin.set_fact:
-    build_dc_setup: "{{ 'active directory domain controller' not in build_dc_smb_check.stdout }}"
+    samba_build_dc_setup: "{{ 'active directory domain controller' not in samba_build_dc_smb_check.stdout }}"
 
 - name: Stop any active services
   ansible.builtin.systemd:
-    name: "{{ build_dc_svc_item }}"
+    name: "{{ samba_build_dc_svc_item }}"
     state: stopped
   loop:
     - samba
@@ -52,8 +52,8 @@
     - nmbd
     - smbd
   loop_control:
-    loop_var: build_dc_svc_item
-  when: build_dc_setup
+    loop_var: samba_build_dc_svc_item
+  when: samba_build_dc_setup
 
 - name: Removes any samba files before provisioning the domain controller
   ansible.builtin.shell: |
@@ -83,10 +83,10 @@
     fi
   args:
     executable: /bin/bash
-  register: build_dc_cleanup_result
-  changed_when: "'changed' in build_dc_cleanup_result.stdout"
-  failed_when: "'failed' in build_dc_cleanup_result.stdout"
-  when: build_dc_setup
+  register: samba_build_dc_cleanup_result
+  changed_when: "'changed' in samba_build_dc_cleanup_result.stdout"
+  failed_when: "'failed' in samba_build_dc_cleanup_result.stdout"
+  when: samba_build_dc_setup
 
 - name: Copy smb.conf to smb.conf.dist if it doesn't already exist
   ansible.builtin.copy:
@@ -100,15 +100,15 @@
   ansible.builtin.file:
     path: /etc/samba/smb.conf
     state: absent
-  when: build_dc_setup
+  when: samba_build_dc_setup
 
 - name: Samba domain provisioning
   ansible.builtin.shell: |
-    samba-tool domain provision --realm={{ build_dc_realm }} --domain={{ build_dc_domain }} --server-role=dc --use-rfc2307 --adminpass="$SAMBA_ADMIN_PASS"
+    samba-tool domain provision --realm={{ samba_build_dc_realm }} --domain={{ samba_build_dc_domain }} --server-role=dc --use-rfc2307 --adminpass="$SAMBA_ADMIN_PASS"
   environment:
-    SAMBA_ADMIN_PASS: "{{ build_dc_administrator_passwd }}"
+    SAMBA_ADMIN_PASS: "{{ samba_build_dc_administrator_passwd }}"
   no_log: true
-  when: build_dc_setup
+  when: samba_build_dc_setup
   args:
     creates: /etc/samba/smb.conf
   notify: samba_ad_dc reboot

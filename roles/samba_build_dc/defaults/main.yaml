@@ -1,0 +1,19 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+---
+# defaults file for samba_ad_dc
+# All values must be supplied by the inventory (host_vars).
+# No concrete value here — the role fails explicitly if they are missing.
+
+samba_build_dc_realm: ~
+samba_build_dc_domain: ~
+samba_build_dc_fqdn: ~
+samba_build_dc_search_domain: ~
+samba_build_dc_nameserver: ~
+samba_build_dc_address: ~
+samba_build_dc_netmask: ~
+samba_build_dc_gateway: ~
+samba_build_dc_ifname: enp1s0
+samba_build_dc_ntp_server: ~
+samba_build_dc_ntp_allow_network: ~
+samba_build_dc_administrator_passwd: "{{ ansible_password }}"
+samba_build_dc_administrator_username: admin

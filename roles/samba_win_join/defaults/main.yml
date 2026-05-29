@@ -1,0 +1,12 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+---
+# Role-specific defaults
+samba_win_join_state: domain        # domain | workgroup
+samba_win_join_reboot: true
+samba_win_join_workgroup: WORKGROUP # workgroup name used when state=workgroup
+
+# Shared with samba_build_dc — override in inventory if needed
+samba_win_join_administrator_username: admin
+samba_win_join_administrator_passwd: "{{ ansible_password }}"
+samba_win_join_realm: ~
+samba_win_join_search_domain: ~

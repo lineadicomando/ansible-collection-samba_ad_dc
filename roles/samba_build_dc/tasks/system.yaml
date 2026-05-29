@@ -2,7 +2,7 @@
 ---
 - name: Set the host name (fqdn)
   ansible.builtin.hostname:
-    name: "{{ build_dc_fqdn }}"
+    name: "{{ samba_build_dc_fqdn }}"
     use: debian
 
 - name: Update apt cache
