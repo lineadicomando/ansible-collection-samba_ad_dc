@@ -51,10 +51,11 @@
           {{ samba_dc_backup_targetdir }}/files_{{ ansible_date_time.iso8601_basic_short }}.tar.gz
 
     - name: Archive user files
-      ansible.builtin.archive:
+      community.general.archive:
         path: "{{ samba_dc_backup_files_paths }}"
         dest: "{{ _samba_dc_backup_files_archive }}"
         format: gz
+        mode: "0600"
       register: samba_dc_backup_files_result
       changed_when: true
 

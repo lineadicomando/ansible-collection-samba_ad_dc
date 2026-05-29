@@ -104,7 +104,11 @@
 
 - name: Samba domain provisioning
   ansible.builtin.shell: |
-    samba-tool domain provision --realm={{ samba_build_dc_realm }} --domain={{ samba_build_dc_domain }} --server-role=dc --use-rfc2307 --adminpass="$SAMBA_ADMIN_PASS"
+    samba-tool domain provision \
+      --realm={{ samba_build_dc_realm }} \
+      --domain={{ samba_build_dc_domain }} \
+      --server-role=dc --use-rfc2307 \
+      --adminpass="$SAMBA_ADMIN_PASS"
   environment:
     SAMBA_ADMIN_PASS: "{{ samba_build_dc_administrator_passwd }}"
   no_log: true
