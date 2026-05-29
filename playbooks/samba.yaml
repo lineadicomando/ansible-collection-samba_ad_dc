@@ -9,10 +9,11 @@
 #          "samba_tool_action":"create",
 #          "samba_tool_args":{"name":"alice","password":"..."}}'
 #
-# target_hosts: limit execution to specific hosts/groups (default: all)
+# target_hosts: limit execution to specific hosts/groups (default: samba_dc)
+# Inventories must define a samba_dc group containing the domain controller(s).
 
 - name: Samba AD DC management dispatcher
-  hosts: "{{ target_hosts | default('all') }}"
+  hosts: "{{ target_hosts | default('samba_dc') }}"
   become: true
   gather_facts: false
   tasks:
