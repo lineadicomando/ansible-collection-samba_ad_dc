@@ -1,8 +1,8 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 ---
 # defaults file for samba_ad_dc
-# Tutti i valori devono essere forniti dall'inventario (host_vars).
-# Nessun valore concreto qui — il role fallisce esplicitamente se mancano.
+# All values must be supplied by the inventory (host_vars).
+# No concrete value here — the role fails explicitly if they are missing.
 
 build_dc_realm: ~
 build_dc_domain: ~
