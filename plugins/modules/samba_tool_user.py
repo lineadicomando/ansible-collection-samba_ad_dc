@@ -83,6 +83,21 @@ options:
         (C(--must-change-at-next-login)). Applied only at creation time.
     type: bool
     default: false
+  primary_group:
+    description:
+      - Name of the group to set as the user's primary group (C(primaryGroupID)).
+      - The group must exist. If the user is not yet a member it is added
+        automatically before the primary group is set.
+      - Applied on every run when set (idempotent: no-op if already correct).
+      - Requires C(ldbmodify) on the domain controller. Only applies when
+        O(state=present).
+    type: str
+  sam_ldb_path:
+    description:
+      - Path to the Samba C(sam.ldb) database used by C(ldbmodify).
+      - Only relevant when O(primary_group) is set.
+    type: path
+    default: /var/lib/samba/private/sam.ldb
   samba_tool_path:
     description:
       - Path to the C(samba-tool) executable. Autodetected on C(PATH) when unset.
@@ -118,6 +133,12 @@ EXAMPLES = r"""
   lineadicomando.samba_ad_dc.samba_tool_user:
     name: olduser
     state: absent
+  become: true
+
+- name: Set primary group of an existing user
+  lineadicomando.samba_ad_dc.samba_tool_user:
+    name: alice
+    primary_group: Studenti
   become: true
 """
 
@@ -236,6 +257,43 @@ class SambaUser:
             args.append("--must-change-at-next-login")
         return args
 
+    def get_group_rid(self, group_name):
+        """Return the RID (int) of group_name extracted from objectSid, or fail."""
+        cmd = [self.samba_tool, "group", "show", group_name]
+        rc, out, err = self.module.run_command(cmd)
+        if rc != 0:
+            self.module.fail_json(msg="Group not found: %s" % group_name)
+        sid = _parse_ldif(out).get("objectSid", "")
+        try:
+            return int(sid.rsplit("-", 1)[-1])
+        except (ValueError, IndexError):
+            self.module.fail_json(msg="Cannot parse RID from objectSid: %s" % sid)
+
+    def is_group_member(self, group_name):
+        """Return True if this user is a member of group_name."""
+        cmd = [self.samba_tool, "group", "listmembers", group_name]
+        rc, out, err = self.module.run_command(cmd)
+        if rc != 0:
+            return False
+        members = [m.strip().lower() for m in out.splitlines() if m.strip()]
+        return self.name.lower() in members
+
+    def set_primary_group(self, group_name, rid, dn):
+        """Set primaryGroupID to rid. Ensures group membership first."""
+        sam_ldb = self.module.params.get("sam_ldb_path") or "/var/lib/samba/private/sam.ldb"
+        if not self.is_group_member(group_name):
+            self._run(["group", "addmembers", group_name, self.name])
+        ldif = (
+            "dn: %s\nchangetype: modify\nreplace: primaryGroupID\nprimaryGroupID: %d\n"
+            % (dn, rid)
+        )
+        rc, out, err = self.module.run_command(["ldbmodify", sam_ldb], data=ldif)
+        if rc != 0:
+            self.module.fail_json(
+                msg="ldbmodify failed: %s" % (err.strip() or out.strip()), rc=rc
+            )
+        self.commands.append("ldbmodify %s [primaryGroupID=%d]" % (sam_ldb, rid))
+
 
 def run_module():
     module = AnsibleModule(
@@ -256,6 +314,8 @@ def run_module():
             company=dict(type="str"),
             ou=dict(type="str"),
             must_change_password=dict(type="bool", default=False),
+            primary_group=dict(type="str"),
+            sam_ldb_path=dict(type="path", default="/var/lib/samba/private/sam.ldb"),
             samba_tool_path=dict(type="path"),
         ),
         supports_check_mode=True,
@@ -318,6 +378,30 @@ def run_module():
                     ],
                     redact=True,
                 )
+
+    # Primary group reconciliation.
+    if params.get("primary_group"):
+        target_rid = user.get_group_rid(params["primary_group"])
+        if existing:
+            try:
+                current_rid = int(existing.get("primaryGroupID", "-1"))
+            except (TypeError, ValueError):
+                current_rid = -1
+            needs_change = current_rid != target_rid
+            dn = existing.get("dn", "")
+        else:
+            # User was just created (or check_mode dry-run); always set.
+            needs_change = True
+            dn = ""
+        if needs_change:
+            changed = True
+            diff_before["primary_group"] = str(current_rid) if existing else "N/A"
+            diff_after["primary_group"] = params["primary_group"]
+            if not module.check_mode:
+                if not dn:
+                    fresh = user.show()
+                    dn = fresh.get("dn", "") if fresh else ""
+                user.set_primary_group(params["primary_group"], target_rid, dn)
 
     module.exit_json(
         changed=changed,

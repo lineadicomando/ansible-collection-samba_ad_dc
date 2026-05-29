@@ -24,7 +24,7 @@ async def list_tools() -> list[Tool]:
                 "Destructive actions (delete, absent, disable, removemembers) "
                 "should be run with preview first to confirm with the user. "
                 "Common actions per object: "
-                "user [list, show, create, delete, enable, disable, setpassword]; "
+                "user [list, show, create, delete, enable, disable, setpassword, setprimarygroup]; "
                 "group [list, show, listmembers, add, delete, addmembers, removemembers]; "
                 "computer [list, show, create, delete]; "
                 "ou [list, listobjects, create, delete]."

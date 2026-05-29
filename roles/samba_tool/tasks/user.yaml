@@ -23,6 +23,7 @@
       - enable
       - disable
       - setpassword
+      - setprimarygroup
 
 - name: Read-only user operations
   when: samba_tool_action in ['list', 'show']
@@ -56,5 +57,7 @@
     company: "{{ samba_tool_args.company | default(omit) }}"
     ou: "{{ samba_tool_args.ou | default(omit) }}"
     must_change_password: "{{ samba_tool_args.must_change_password | default(omit) }}"
+    primary_group: "{{ samba_tool_args.primary_group | default(omit) }}"
+    sam_ldb_path: "{{ samba_tool_args.sam_ldb_path | default(omit) }}"
     samba_tool_path: "{{ samba_tool_bin if samba_tool_bin != 'samba-tool' else omit }}"
   no_log: "{{ samba_tool_no_log }}"
