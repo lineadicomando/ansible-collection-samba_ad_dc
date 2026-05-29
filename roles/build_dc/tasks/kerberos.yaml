@@ -11,7 +11,7 @@
 - name: Check the status of /etc/krb5.conf
   ansible.builtin.stat:
     path: /etc/krb5.conf
-    follow: false # importante per sapere se è un symlink
+    follow: false # important to detect whether it is a symlink
   register: build_dc_krb5_status
 
 - name: Delete the Kerberos configuration file if it is a normal file
