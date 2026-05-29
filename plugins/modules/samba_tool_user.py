@@ -287,7 +287,7 @@ class SambaUser:
             "dn: %s\nchangetype: modify\nreplace: primaryGroupID\nprimaryGroupID: %d\n"
             % (dn, rid)
         )
-        rc, out, err = self.module.run_command(["ldbmodify", sam_ldb], data=ldif)
+        rc, out, err = self.module.run_command(["ldbmodify", "-H", sam_ldb], data=ldif)
         if rc != 0:
             self.module.fail_json(
                 msg="ldbmodify failed: %s" % (err.strip() or out.strip()), rc=rc
