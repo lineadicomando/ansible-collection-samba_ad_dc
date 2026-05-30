@@ -23,7 +23,7 @@ After provisioning, open `https://<dc-fqdn>:9090` to access **[cockpit-samba-ad-
 
 | Role | Target | Purpose |
 |------|--------|---------|
-| [`samba_build_dc`](roles/samba_build_dc/README.md) | Debian Trixie (13) | Provision a full Samba 4 AD DC with Cockpit web UI |
+| [`samba_dc_build`](roles/samba_dc_build/README.md) | Debian Trixie (13) | Provision a full Samba 4 AD DC with Cockpit web UI |
 | [`samba_win_join`](roles/samba_win_join/README.md) | Windows (all) | Join or remove Windows clients from the domain |
 | `deb_join` *(coming soon)* | Debian / Ubuntu | Join or remove Linux clients from the domain |
 
@@ -72,17 +72,17 @@ ansible-galaxy collection install lineadicomando.samba_ad_dc
 
 ```yaml
 # host_vars/dc01.example.com.yaml
-samba_build_dc_realm: EXAMPLE.COM
-samba_build_dc_domain: EXAMPLE
-samba_build_dc_fqdn: dc01.example.com
-samba_build_dc_search_domain: example.com
-samba_build_dc_nameserver: 192.168.1.1
-samba_build_dc_address: 192.168.1.10
-samba_build_dc_netmask: 255.255.255.0
-samba_build_dc_gateway: 192.168.1.1
-samba_build_dc_ifname: enp1s0
-samba_build_dc_ntp_server: pool.ntp.org
-samba_build_dc_ntp_allow_network: 192.168.1.0/24
+samba_dc_build_realm: EXAMPLE.COM
+samba_dc_build_domain: EXAMPLE
+samba_dc_build_fqdn: dc01.example.com
+samba_dc_build_search_domain: example.com
+samba_dc_build_nameserver: 192.168.1.1
+samba_dc_build_address: 192.168.1.10
+samba_dc_build_netmask: 255.255.255.0
+samba_dc_build_gateway: 192.168.1.1
+samba_dc_build_ifname: enp1s0
+samba_dc_build_ntp_server: pool.ntp.org
+samba_dc_build_ntp_allow_network: 192.168.1.0/24
 ```
 
 ## Playbook example
@@ -92,7 +92,7 @@ samba_build_dc_ntp_allow_network: 192.168.1.0/24
   hosts: dc
   become: true
   roles:
-    - lineadicomando.samba_ad_dc.samba_build_dc
+    - lineadicomando.samba_ad_dc.samba_dc_build
 
 - name: Join Windows clients
   hosts: windows_clients
