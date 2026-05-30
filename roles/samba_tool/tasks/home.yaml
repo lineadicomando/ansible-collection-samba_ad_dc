@@ -1,0 +1,234 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+---
+# Home directory provisioning for a domain user.
+# Replicates the logic of cockpit-samba-ad-dc provisionHomeDir().
+#
+# Supported actions:
+#   provision : create the directory, set LDAP attributes, ensure the SMB share
+#   absent    : remove the directory and clear the LDAP attributes
+#
+# Required args:
+#   name          : sAMAccountName of the user
+#
+# Optional args:
+#   home_base     : base path for home directories (default: /home/samba)
+#   home_drive    : Windows drive letter mapping  (default: H:)
+#   share_name    : SMB share name               (default: home)
+
+- name: Validate home action
+  ansible.builtin.assert:
+    that: samba_tool_action in ['provision', 'absent']
+    fail_msg: >-
+      Unsupported home action '{{ samba_tool_action }}'.
+      Valid: provision, absent.
+    quiet: true
+
+- name: Validate required argument name
+  ansible.builtin.assert:
+    that:
+      - samba_tool_args.name is defined
+      - samba_tool_args.name | length > 0
+    fail_msg: "home provisioning requires args.name (sAMAccountName)."
+    quiet: true
+
+- name: Set home defaults
+  ansible.builtin.set_fact:
+    _samba_tool_home_base: "{{ samba_tool_args.home_base | default('/home/samba') }}"
+    _samba_tool_home_drive: "{{ samba_tool_args.home_drive | default('H:') }}"
+    _samba_tool_share_name: "{{ samba_tool_args.share_name | default('home') }}"
+    _samba_tool_home_username: "{{ samba_tool_args.name }}"
+
+- name: Set derived paths
+  ansible.builtin.set_fact:
+    _samba_tool_home_dir: "{{ _samba_tool_home_base }}/{{ _samba_tool_home_username }}"
+
+# ── provision ────────────────────────────────────────────────────────────────
+
+- name: Provision home directory
+  when: samba_tool_action == 'provision'
+  block:
+    - name: Retrieve DC NetBIOS name
+      ansible.builtin.command:
+        argv: ["{{ samba_tool_bin }}", "domain", "info", "127.0.0.1"]
+      register: _samba_tool_domain_info
+      changed_when: false
+
+    - name: Parse NetBIOS name
+      ansible.builtin.set_fact:
+        _samba_tool_netbios: >-
+          {{ _samba_tool_domain_info.stdout
+             | regex_search('DC netbios name\s*:\s*(\S+)', '\1', ignorecase=True)
+             | first }}
+
+    - name: Retrieve user DN
+      ansible.builtin.command:
+        argv: ["{{ samba_tool_bin }}", "user", "show", "{{ _samba_tool_home_username }}"]
+      register: _samba_tool_user_show
+      changed_when: false
+
+    - name: Parse user DN
+      ansible.builtin.set_fact:
+        _samba_tool_user_dn: >-
+          {{ _samba_tool_user_show.stdout
+             | regex_search('^dn: (.+)$', '\1', multiline=True)
+             | first }}
+
+    - name: Set UNC home path
+      ansible.builtin.set_fact:
+        _samba_tool_unc_path: >-
+          \\{{ _samba_tool_netbios }}\{{ _samba_tool_share_name }}\{{ _samba_tool_home_username }}
+
+    - name: Ensure home base directory exists
+      ansible.builtin.file:
+        path: "{{ _samba_tool_home_base }}"
+        state: directory
+        owner: root
+        group: root
+        mode: "0755"
+
+    - name: Create user home directory
+      ansible.builtin.file:
+        path: "{{ _samba_tool_home_dir }}"
+        state: directory
+        owner: "{{ _samba_tool_home_username }}"
+        group: "{{ _samba_tool_home_username }}"
+        mode: "0700"
+
+    - name: Create temporary file for LDIF
+      ansible.builtin.tempfile:
+        state: file
+        suffix: .ldif
+      register: _samba_tool_ldif_tmp
+
+    - name: Write homeDrive and homeDirectory LDIF
+      ansible.builtin.copy:
+        dest: "{{ _samba_tool_ldif_tmp.path }}"
+        owner: root
+        group: root
+        mode: "0600"
+        content: |
+          dn: {{ _samba_tool_user_dn }}
+          changetype: modify
+          replace: homeDrive
+          homeDrive: {{ _samba_tool_home_drive }}
+          -
+          replace: homeDirectory
+          homeDirectory: {{ _samba_tool_unc_path }}
+          -
+
+    - name: Set homeDrive and homeDirectory LDAP attributes
+      ansible.builtin.command:
+        argv:
+          - ldbmodify
+          - "-H"
+          - /var/lib/samba/private/sam.ldb
+          - "{{ _samba_tool_ldif_tmp.path }}"
+      changed_when: true
+
+    - name: Remove temporary LDIF file
+      ansible.builtin.file:
+        path: "{{ _samba_tool_ldif_tmp.path }}"
+        state: absent
+
+    - name: Check whether the SMB share already exists
+      ansible.builtin.command:
+        argv: ["net", "conf", "showshare", "{{ _samba_tool_share_name }}"]
+      register: _samba_tool_share_check
+      changed_when: false
+      failed_when: false
+
+    - name: Create SMB share
+      ansible.builtin.command:
+        argv:
+          - net
+          - conf
+          - addshare
+          - "{{ _samba_tool_share_name }}"
+          - "{{ _samba_tool_home_base }}"
+          - writeable=y
+          - guest_ok=n
+      when: _samba_tool_share_check.rc != 0
+      changed_when: true
+
+    - name: Configure SMB share parameters
+      ansible.builtin.command:
+        argv: ["net", "conf", "setparm", "{{ _samba_tool_share_name }}", "{{ item.param }}", "{{ item.value }}"]
+      loop:
+        - {param: "browseable", value: "no"}
+        - {param: "create mask", value: "0700"}
+        - {param: "directory mask", value: "0700"}
+      when: _samba_tool_share_check.rc != 0
+      changed_when: true
+
+# ── absent ───────────────────────────────────────────────────────────────────
+
+- name: Remove home directory
+  when: samba_tool_action == 'absent'
+  block:
+    - name: Retrieve user DN for removal
+      ansible.builtin.command:
+        argv: ["{{ samba_tool_bin }}", "user", "show", "{{ _samba_tool_home_username }}"]
+      register: _samba_tool_user_show_rm
+      changed_when: false
+      failed_when: false
+
+    - name: Parse user DN for removal
+      ansible.builtin.set_fact:
+        _samba_tool_user_dn_rm: >-
+          {{ _samba_tool_user_show_rm.stdout
+             | regex_search('^dn: (.+)$', '\1', multiline=True)
+             | first | default('') }}
+      when: _samba_tool_user_show_rm.rc == 0
+
+    - name: Create temporary file for clear LDIF
+      ansible.builtin.tempfile:
+        state: file
+        suffix: .ldif
+      register: _samba_tool_ldif_tmp_rm
+      when:
+        - _samba_tool_user_show_rm.rc == 0
+        - _samba_tool_user_dn_rm | default('') | length > 0
+
+    - name: Write LDIF to clear home attributes
+      ansible.builtin.copy:
+        dest: "{{ _samba_tool_ldif_tmp_rm.path }}"
+        owner: root
+        group: root
+        mode: "0600"
+        content: |
+          dn: {{ _samba_tool_user_dn_rm }}
+          changetype: modify
+          replace: homeDrive
+          homeDrive:
+          -
+          replace: homeDirectory
+          homeDirectory:
+          -
+      when:
+        - _samba_tool_user_show_rm.rc == 0
+        - _samba_tool_user_dn_rm | default('') | length > 0
+
+    - name: Clear homeDrive and homeDirectory LDAP attributes
+      ansible.builtin.command:
+        argv:
+          - ldbmodify
+          - "-H"
+          - /var/lib/samba/private/sam.ldb
+          - "{{ _samba_tool_ldif_tmp_rm.path }}"
+      when:
+        - _samba_tool_user_show_rm.rc == 0
+        - _samba_tool_user_dn_rm | default('') | length > 0
+      changed_when: true
+
+    - name: Remove temporary clear LDIF file
+      ansible.builtin.file:
+        path: "{{ _samba_tool_ldif_tmp_rm.path }}"
+        state: absent
+      when:
+        - _samba_tool_user_show_rm.rc == 0
+        - _samba_tool_user_dn_rm | default('') | length > 0
+
+    - name: Remove user home directory
+      ansible.builtin.file:
+        path: "{{ _samba_tool_home_dir }}"
+        state: absent
