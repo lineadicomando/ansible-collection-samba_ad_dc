@@ -106,4 +106,4 @@ GPL-3.0-or-later
 
 ## Author
 
-Alessandro Gagliano <alessandro.gagliano@lineadicomando.it>
+Alessandro Gagliano — [lineadicomando.it](https://lineadicomando.it)
