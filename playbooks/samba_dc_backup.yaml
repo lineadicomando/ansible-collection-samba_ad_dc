@@ -4,7 +4,7 @@
 # Invokable by FQCN: ansible-playbook lineadicomando.samba_ad_dc.samba_dc_backup
 #
 #   ansible-playbook lineadicomando.samba_ad_dc.samba_dc_backup \
-#     -e '{"target_hosts":"samba-ad-dc","samba_dc_backup_action":"backup",
+#     -e '{"target_hosts":"samba_ad_dc","samba_dc_backup_action":"backup",
 #          "samba_dc_backup_targetdir":"/srv/backups"}'
 #
 # target_hosts: limit execution to specific hosts/groups (default: all)

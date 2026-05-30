@@ -5,7 +5,7 @@
 # The role interface variables are passed as extra-vars (JSON):
 #
 #   ansible-playbook lineadicomando.samba_ad_dc.samba \
-#     -e '{"target_hosts":"samba-ad-dc","samba_tool_object":"user",
+#     -e '{"target_hosts":"samba_ad_dc","samba_tool_object":"user",
 #          "samba_tool_action":"create",
 #          "samba_tool_args":{"name":"alice","password":"..."}}'
 #
