@@ -1,0 +1,20 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+---
+argument_specs:
+  main:
+    short_description: Query Windows domain or workgroup membership status
+    description:
+      - Read-only role. Queries Win32_ComputerSystem via CIM to determine
+        whether the Windows target is joined to an Active Directory domain
+        or a workgroup, and reports which one.
+      - Optionally publishes the result as the samba_win_status Ansible fact
+        for use by subsequent tasks or roles.
+    options:
+      samba_win_status_set_fact:
+        description: Register the result as the samba_win_status Ansible fact.
+        type: bool
+        default: true
+      samba_win_status_verbose:
+        description: Print a human-readable membership summary via debug.
+        type: bool
+        default: true

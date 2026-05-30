@@ -1,0 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+---
+samba_win_status_set_fact: true   # publish samba_win_status fact for downstream use
+samba_win_status_verbose: true    # print human-readable membership summary via debug

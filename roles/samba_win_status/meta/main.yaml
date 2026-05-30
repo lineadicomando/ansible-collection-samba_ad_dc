@@ -1,0 +1,18 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+---
+galaxy_info:
+  author: Alessandro Gagliano
+  description: Query Windows domain or workgroup membership status via CIM
+  license: GPL-3.0-or-later
+  min_ansible_version: "2.15"
+  platforms:
+    - name: Windows
+      versions:
+        - all
+  galaxy_tags:
+    - windows
+    - activedirectory
+    - domain
+    - samba
+
+dependencies: []

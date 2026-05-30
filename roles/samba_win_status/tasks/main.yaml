@@ -1,0 +1,33 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+---
+- name: Query domain/workgroup membership via CIM
+  ansible.windows.win_powershell:
+    script: |
+      $cs = Get-CimInstance -ClassName Win32_ComputerSystem
+      [ordered]@{
+          hostname       = $cs.Name
+          part_of_domain = [bool]$cs.PartOfDomain
+          domain         = if ($cs.PartOfDomain) { $cs.Domain } else { $null }
+          workgroup      = if (-not $cs.PartOfDomain) { $cs.Workgroup } else { $null }
+      }
+  register: _samba_win_status_raw
+  changed_when: false
+
+- name: Set samba_win_status fact
+  ansible.builtin.set_fact:
+    samba_win_status: "{{ _samba_win_status_raw.output[0] }}"
+  when: samba_win_status_set_fact | bool
+
+- name: Report — joined to domain
+  ansible.builtin.debug:
+    msg: "{{ inventory_hostname }} is joined to domain '{{ samba_win_status.domain }}'"
+  when:
+    - samba_win_status_verbose | bool
+    - samba_win_status.part_of_domain | bool
+
+- name: Report — member of workgroup
+  ansible.builtin.debug:
+    msg: "{{ inventory_hostname }} is in workgroup '{{ samba_win_status.workgroup }}'"
+  when:
+    - samba_win_status_verbose | bool
+    - not (samba_win_status.part_of_domain | bool)

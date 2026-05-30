@@ -1,0 +1,23 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+---
+# Self-describing catalog for MCP tool integration.
+display_name: Windows Domain/Workgroup Status
+notes: >-
+  Read-only role targeting Windows hosts. Queries Win32_ComputerSystem via CIM
+  to determine whether the host is joined to an AD domain or a workgroup.
+  Never changes state. Publishes the samba_win_status fact for downstream use.
+
+objects:
+  status:
+    description: >-
+      Domain or workgroup membership status of a Windows host.
+      Returns hostname, part_of_domain flag, and either the domain FQDN
+      or the workgroup name.
+    actions:
+      query:
+        args: []
+        readonly: true
+        note: >-
+          No arguments required. Result is printed via debug and optionally
+          registered as the samba_win_status fact
+          (keys: hostname, part_of_domain, domain, workgroup).

@@ -5,7 +5,7 @@ from mcp.server import Server
 from mcp.server.stdio import stdio_server
 from mcp.types import TextContent, Tool
 
-from runner import build_backup_command, build_samba_command, format_command, run_command
+from runner import build_backup_command, build_samba_command, build_samba_win_status_command, format_command, run_command
 
 app = Server("samba-ad-dc")
 
@@ -137,6 +137,43 @@ async def list_tools() -> list[Tool]:
                 "required": ["action"],
             },
         ),
+        Tool(
+            name="samba_win_status",
+            description=(
+                "Query the domain or workgroup membership status of Windows hosts, "
+                "through the lineadicomando.samba_ad_dc.samba_win_status playbook. "
+                "Read-only: never changes state. "
+                "Queries Win32_ComputerSystem via CIM and reports whether each host "
+                "is joined to an AD domain (and which one) or a workgroup (and which one). "
+                "Targets lab_win by default (all Windows hosts in the lab)."
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "l": {
+                        "type": "string",
+                        "description": (
+                            "Ansible limit: single hostname or group name. "
+                            "Defaults to lab_win (all Windows hosts)."
+                        ),
+                        "default": "all",
+                    },
+                    "inventory": {
+                        "type": "string",
+                        "description": "Inventory name under inventories/.",
+                        "default": "school",
+                    },
+                    "preview": {
+                        "type": "boolean",
+                        "description": (
+                            "If true, return the ansible-playbook command without executing it."
+                        ),
+                        "default": False,
+                    },
+                },
+                "required": [],
+            },
+        ),
     ]
 
 
@@ -169,6 +206,22 @@ async def call_tool(name: str, arguments: dict) -> list[TextContent]:
         preview: bool = arguments.get("preview", False)
 
         cmd = build_backup_command(action, args or None, l, inventory)
+
+        if preview:
+            return [TextContent(
+                type="text",
+                text=f"Command to run:\n\n  {format_command(cmd)}\n\nNo command executed.",
+            )]
+
+        output = await asyncio.to_thread(run_command, cmd)
+        return [TextContent(type="text", text=output)]
+
+    if name == "samba_win_status":
+        l: str = arguments.get("l", "all")
+        inventory: str = arguments.get("inventory", "school")
+        preview: bool = arguments.get("preview", False)
+
+        cmd = build_samba_win_status_command(l, inventory)
 
         if preview:
             return [TextContent(

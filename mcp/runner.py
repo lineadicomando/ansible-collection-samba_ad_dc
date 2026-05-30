@@ -49,6 +49,21 @@ def build_backup_command(
     return cmd
 
 
+def build_samba_win_status_command(
+    l: str = "all",
+    inventory: str = "school",
+) -> list[str]:
+    root = _project_root()
+    cmd = ["ansible-playbook", "lineadicomando.samba_ad_dc.samba_win_status"]
+    cmd += ["-i", str(root / "inventories" / inventory / "hosts.yaml")]
+    extra: dict = {}
+    if l and l != "all":
+        extra["target_hosts"] = l
+    if extra:
+        cmd += ["-e", json.dumps(extra)]
+    return cmd
+
+
 def run_command(cmd: list[str]) -> str:
     result = subprocess.run(
         cmd,

@@ -1,0 +1,17 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+---
+# Dispatcher for querying Windows domain/workgroup membership status.
+# Invokable by FQCN: ansible-playbook lineadicomando.samba_ad_dc.samba_win_status
+#
+#   ansible-playbook lineadicomando.samba_ad_dc.samba_win_status \
+#     -e '{"target_hosts":"lab_win"}'
+#
+# target_hosts: limit execution to specific hosts/groups (default: lab_win)
+
+- name: Windows domain/workgroup membership status
+  hosts: "{{ target_hosts | default('lab_win') }}"
+  gather_facts: false
+  tasks:
+    - name: Run samba_win_status
+      ansible.builtin.import_role:
+        name: lineadicomando.samba_ad_dc.samba_win_status
