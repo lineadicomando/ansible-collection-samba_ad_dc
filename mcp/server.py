@@ -18,7 +18,7 @@ async def list_tools() -> list[Tool]:
             description=(
                 "Manage the Samba AD Domain Controller via samba-tool, through the "
                 "lineadicomando.samba_ad_dc.samba playbook. "
-                "Objects: user, group, computer, ou. "
+                "Objects: user, group, computer, ou, home. "
                 "Read-only actions (list, show, listmembers, listobjects) never change "
                 "state. Mutating user actions are idempotent. "
                 "Destructive actions (delete, absent, disable, removemembers) "
@@ -27,14 +27,19 @@ async def list_tools() -> list[Tool]:
                 "user [list, show, create, delete, enable, disable, setpassword, setprimarygroup]; "
                 "group [list, show, listmembers, add, delete, addmembers, removemembers]; "
                 "computer [list, show, create, delete]; "
-                "ou [list, listobjects, create, delete]."
+                "ou [list, listobjects, create, delete]; "
+                "home [provision, absent] — creates/removes the physical home directory "
+                "(/home/samba/<user> by default), sets homeDrive and homeDirectory LDAP "
+                "attributes, and ensures the SMB share exists. "
+                "home args: name (required), home_base (default /home/samba), "
+                "home_drive (default H:), share_name (default home)."
             ),
             inputSchema={
                 "type": "object",
                 "properties": {
                     "object": {
                         "type": "string",
-                        "enum": ["user", "group", "computer", "ou"],
+                        "enum": ["user", "group", "computer", "ou", "home"],
                         "description": "The kind of AD object to act upon.",
                     },
                     "action": {
@@ -46,7 +51,8 @@ async def list_tools() -> list[Tool]:
                         "description": (
                             "Action-specific arguments, e.g. "
                             "{\"name\": \"alice\", \"password\": \"...\"} or "
-                            "{\"name\": \"staff\", \"members\": [\"alice\", \"bob\"]}."
+                            "{\"name\": \"staff\", \"members\": [\"alice\", \"bob\"]} or "
+                            "{\"name\": \"alice\", \"home_base\": \"/home/samba\"}."
                         ),
                         "default": {},
                     },

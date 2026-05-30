@@ -7,3 +7,4 @@ samba_tool_valid_objects:
   - group
   - computer
   - ou
+  - home

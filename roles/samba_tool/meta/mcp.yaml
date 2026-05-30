@@ -53,3 +53,20 @@ objects:
       create: { args: [name], destructive: false }
       delete: { args: [name], destructive: true }
       absent: { args: [name], destructive: true }
+  home:
+    description: >-
+      Home directory provisioning for a domain user. Replicates the logic of
+      cockpit-samba-ad-dc: creates the physical directory, sets homeDrive /
+      homeDirectory LDAP attributes via ldbmodify, and ensures the SMB share.
+    actions:
+      provision:
+        args: [name, home_base, home_drive, share_name]
+        destructive: false
+        note: >-
+          name is required (sAMAccountName). home_base defaults to /home/samba,
+          home_drive to H:, share_name to home. The SMB share is only created
+          if it does not already exist.
+      absent:
+        args: [name, home_base]
+        destructive: true
+        note: Removes the physical directory and clears the LDAP attributes.
