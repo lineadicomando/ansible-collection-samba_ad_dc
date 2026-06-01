@@ -27,7 +27,7 @@ Joins or removes **Windows** clients from a Samba 4 AD domain using the `microso
 | `samba_win_join_administrator_username` | `admin` | AD administrator username |
 | `samba_win_join_administrator_passwd` | `{{ ansible_password }}` | AD administrator password |
 
-The `samba_win_join_realm`, `samba_win_join_search_domain`, `samba_win_join_administrator_username` and `samba_win_join_administrator_passwd` variables hold the same values used by `samba_build_dc` and are typically defined in `group_vars/all.yaml`.
+The `samba_win_join_realm`, `samba_win_join_search_domain`, `samba_win_join_administrator_username` and `samba_win_join_administrator_passwd` variables hold the same values used by `samba_dc_build` and are typically defined in `group_vars/all.yaml`.
 
 ## Example
 

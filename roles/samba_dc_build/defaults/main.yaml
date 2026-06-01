@@ -4,16 +4,16 @@
 # All values must be supplied by the inventory (host_vars).
 # No concrete value here — the role fails explicitly if they are missing.
 
-samba_build_dc_realm: ~
-samba_build_dc_domain: ~
-samba_build_dc_fqdn: ~
-samba_build_dc_search_domain: ~
-samba_build_dc_nameserver: ~
-samba_build_dc_address: ~
-samba_build_dc_netmask: ~
-samba_build_dc_gateway: ~
-samba_build_dc_ifname: enp1s0
-samba_build_dc_ntp_server: ~
-samba_build_dc_ntp_allow_network: ~
-samba_build_dc_administrator_passwd: "{{ ansible_password }}"
-samba_build_dc_administrator_username: admin
+samba_dc_build_realm: ~
+samba_dc_build_domain: ~
+samba_dc_build_fqdn: ~
+samba_dc_build_search_domain: ~
+samba_dc_build_nameserver: ~
+samba_dc_build_address: ~
+samba_dc_build_netmask: ~
+samba_dc_build_gateway: ~
+samba_dc_build_ifname: enp1s0
+samba_dc_build_ntp_server: ~
+samba_dc_build_ntp_allow_network: ~
+samba_dc_build_administrator_passwd: "{{ ansible_password }}"
+samba_dc_build_administrator_username: admin
