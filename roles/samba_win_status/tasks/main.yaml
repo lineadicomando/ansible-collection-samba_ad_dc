@@ -13,7 +13,7 @@
   register: _samba_win_status_raw
   changed_when: false
 
-- name: Set samba_win_status fact
+- name: Set samba_win_status fact  # noqa: var-naming[no-role-prefix]
   ansible.builtin.set_fact:
     samba_win_status: "{{ _samba_win_status_raw.output[0] }}"
   when: samba_win_status_set_fact | bool
