@@ -24,7 +24,7 @@ jobs:
         run: pip install "ansible-core>=2.15" "ansible-lint"
 
       - name: Install collection dependencies
-        run: ansible-galaxy collection install community.general microsoft.ad
+        run: ansible-galaxy collection install community.general microsoft.ad ansible.windows
 
       - name: Run ansible-lint
         run: ansible-lint
