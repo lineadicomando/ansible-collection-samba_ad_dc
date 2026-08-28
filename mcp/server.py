@@ -1,17 +1,50 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+"""MCP server exposing the lineadicomando.samba_ad_dc playbooks as tools."""
 import asyncio
-import json
 
 from mcp.server import Server
 from mcp.server.stdio import stdio_server
-from mcp.types import TextContent, Tool
+from mcp.types import TextContent, Tool, CallToolResult, ListToolsResult, PaginatedRequestParams, CallToolRequestParams
 
-from runner import build_backup_command, build_samba_command, build_samba_win_status_command, format_command, run_command
+from runner import (
+    build_backup_command,
+    build_samba_command,
+    build_samba_win_status_command,
+    format_command,
+    run_command,
+)
 
 app = Server("samba-ad-dc")
 
+_LIMIT_SCHEMA = {
+    "type": "string",
+    "description": (
+        "Ansible host pattern: a single host name or a group. "
+        "Passed to the playbook as target_hosts."
+    ),
+    "default": "all",
+}
 
-@app.list_tools()
-async def list_tools() -> list[Tool]:
+_INVENTORY_SCHEMA = {
+    "type": "string",
+    "description": (
+        "Inventory name under inventories/, unless ANSIBLE_MCP_INVENTORY "
+        "points at an explicit inventory file."
+    ),
+    "default": "school",
+}
+
+_PREVIEW_SCHEMA = {
+    "type": "boolean",
+    "description": (
+        "If true, return the ansible-playbook command without "
+        "executing it. Use before destructive actions."
+    ),
+    "default": False,
+}
+
+
+def _get_tools() -> list[Tool]:
     return [
         Tool(
             name="samba",
@@ -23,16 +56,20 @@ async def list_tools() -> list[Tool]:
                 "state. Mutating user actions are idempotent. "
                 "Destructive actions (delete, absent, disable, removemembers) "
                 "should be run with preview first to confirm with the user. "
+                "args.name is required for every action except list. "
                 "Common actions per object: "
-                "user [list, show, create, delete, enable, disable, setpassword, setprimarygroup]; "
-                "group [list, show, listmembers, add, delete, addmembers, removemembers]; "
-                "computer [list, show, create, delete]; "
-                "ou [list, listobjects, create, delete]; "
+                "user [list, show, create, present, delete, absent, enable, disable, "
+                "setpassword, setprimarygroup]; "
+                "group [list, show, listmembers, add, create, delete, absent, addmembers, "
+                "removemembers]; "
+                "computer [list, show, create, delete, absent]; "
+                "ou [list, listobjects, create, delete, absent]; "
                 "home [provision, absent] — creates/removes the physical home directory "
                 "(/home/samba/<user> by default), sets homeDrive and homeDirectory LDAP "
                 "attributes, and ensures the SMB share exists. "
                 "home args: name (required), home_base (default /home/samba), "
-                "home_drive (default H:), share_name (default home)."
+                "home_drive (default H:), share_name (default home), "
+                "home_group (default Domain Users)."
             ),
             inputSchema={
                 "type": "object",
@@ -56,27 +93,9 @@ async def list_tools() -> list[Tool]:
                         ),
                         "default": {},
                     },
-                    "l": {
-                        "type": "string",
-                        "description": (
-                            "Ansible limit: the domain controller host or group. "
-                            "Should target a single DC."
-                        ),
-                        "default": "all",
-                    },
-                    "inventory": {
-                        "type": "string",
-                        "description": "Inventory name under inventories/.",
-                        "default": "school",
-                    },
-                    "preview": {
-                        "type": "boolean",
-                        "description": (
-                            "If true, return the ansible-playbook command without "
-                            "executing it. Use before destructive actions."
-                        ),
-                        "default": False,
-                    },
+                    "l": _LIMIT_SCHEMA,
+                    "inventory": _INVENTORY_SCHEMA,
+                    "preview": _PREVIEW_SCHEMA,
                 },
                 "required": ["object", "action"],
             },
@@ -105,34 +124,16 @@ async def list_tools() -> list[Tool]:
                             "Action-specific arguments (keys without the samba_dc_backup_ prefix). "
                             "backup: targetdir (required), domain (bool, default true), "
                             "domain_type (online|offline, default offline), domain_server, "
-                            "domain_username, domain_password, "
+                            "domain_username, domain_password (required with domain_username), "
                             "files (bool, default true), files_paths (list, default [/home]). "
                             "restore: restore_backup_file (required), restore_targetdir (required), "
                             "restore_newservername (required), restore_confirm=true (required)."
                         ),
                         "default": {},
                     },
-                    "l": {
-                        "type": "string",
-                        "description": (
-                            "Ansible limit: the domain controller host or group. "
-                            "Should target a single DC."
-                        ),
-                        "default": "all",
-                    },
-                    "inventory": {
-                        "type": "string",
-                        "description": "Inventory name under inventories/.",
-                        "default": "school",
-                    },
-                    "preview": {
-                        "type": "boolean",
-                        "description": (
-                            "If true, return the ansible-playbook command without "
-                            "executing it. Use before destructive actions."
-                        ),
-                        "default": False,
-                    },
+                    "l": _LIMIT_SCHEMA,
+                    "inventory": _INVENTORY_SCHEMA,
+                    "preview": _PREVIEW_SCHEMA,
                 },
                 "required": ["action"],
             },
@@ -150,26 +151,9 @@ async def list_tools() -> list[Tool]:
             inputSchema={
                 "type": "object",
                 "properties": {
-                    "l": {
-                        "type": "string",
-                        "description": (
-                            "Ansible limit: single hostname or group name. "
-                            "Defaults to lab_win (all Windows hosts)."
-                        ),
-                        "default": "all",
-                    },
-                    "inventory": {
-                        "type": "string",
-                        "description": "Inventory name under inventories/.",
-                        "default": "school",
-                    },
-                    "preview": {
-                        "type": "boolean",
-                        "description": (
-                            "If true, return the ansible-playbook command without executing it."
-                        ),
-                        "default": False,
-                    },
+                    "l": _LIMIT_SCHEMA,
+                    "inventory": _INVENTORY_SCHEMA,
+                    "preview": _PREVIEW_SCHEMA,
                 },
                 "required": [],
             },
@@ -177,62 +161,49 @@ async def list_tools() -> list[Tool]:
     ]
 
 
-@app.call_tool()
-async def call_tool(name: str, arguments: dict) -> list[TextContent]:
+def _command_for(name: str, arguments: dict) -> list[str] | None:
+    """Translate an MCP tool call into an ansible-playbook command line."""
+    limit = arguments.get("l", "all")
+    inventory = arguments.get("inventory", "school")
+    args = arguments.get("args") or {}
+
     if name == "samba":
-        object_: str = arguments["object"]
-        action: str = arguments["action"]
-        args: dict = arguments.get("args") or {}
-        l: str = arguments.get("l", "all")
-        inventory: str = arguments.get("inventory", "school")
-        preview: bool = arguments.get("preview", False)
-
-        cmd = build_samba_command(object_, action, args or None, l, inventory)
-
-        if preview:
-            return [TextContent(
-                type="text",
-                text=f"Command to run:\n\n  {format_command(cmd)}\n\nNo command executed.",
-            )]
-
-        output = await asyncio.to_thread(run_command, cmd)
-        return [TextContent(type="text", text=output)]
-
+        return build_samba_command(
+            arguments["object"], arguments["action"], args or None, limit, inventory
+        )
     if name == "samba_dc_backup":
-        action: str = arguments["action"]
-        args: dict = arguments.get("args") or {}
-        l: str = arguments.get("l", "all")
-        inventory: str = arguments.get("inventory", "school")
-        preview: bool = arguments.get("preview", False)
-
-        cmd = build_backup_command(action, args or None, l, inventory)
-
-        if preview:
-            return [TextContent(
-                type="text",
-                text=f"Command to run:\n\n  {format_command(cmd)}\n\nNo command executed.",
-            )]
-
-        output = await asyncio.to_thread(run_command, cmd)
-        return [TextContent(type="text", text=output)]
-
+        return build_backup_command(arguments["action"], args or None, limit, inventory)
     if name == "samba_win_status":
-        l: str = arguments.get("l", "all")
-        inventory: str = arguments.get("inventory", "school")
-        preview: bool = arguments.get("preview", False)
+        return build_samba_win_status_command(limit, inventory)
+    return None
 
-        cmd = build_samba_win_status_command(l, inventory)
 
-        if preview:
-            return [TextContent(
+async def handle_list_tools(params: PaginatedRequestParams) -> ListToolsResult:
+    return ListToolsResult(tools=_get_tools())
+
+
+async def handle_call_tool(params: CallToolRequestParams) -> CallToolResult:
+    name = params.name
+    arguments = params.arguments or {}
+
+    cmd = _command_for(name, arguments)
+    if cmd is None:
+        return CallToolResult(content=[TextContent(type="text", text=f"Unknown tool: {name}")])
+
+    if arguments.get("preview", False):
+        return CallToolResult(content=[
+            TextContent(
                 type="text",
                 text=f"Command to run:\n\n  {format_command(cmd)}\n\nNo command executed.",
-            )]
+            )
+        ])
 
-        output = await asyncio.to_thread(run_command, cmd)
-        return [TextContent(type="text", text=output)]
+    output = await asyncio.to_thread(run_command, cmd)
+    return CallToolResult(content=[TextContent(type="text", text=output)])
 
-    return [TextContent(type="text", text=f"Unknown tool: {name}")]
+
+app.add_request_handler("tools/list", PaginatedRequestParams, handle_list_tools)
+app.add_request_handler("tools/call", CallToolRequestParams, handle_call_tool)
 
 
 async def main():
