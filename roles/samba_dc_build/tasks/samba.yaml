@@ -165,6 +165,18 @@
     regexp: '^\s*registry shares\s*='
     line: "\tregistry shares = yes"
 
+# After network.yaml the DC resolves through itself, and SAMBA_INTERNAL is
+# authoritative only for the AD zone: without a forwarder every external name
+# returns SERVFAIL, which breaks apt, git and the domain members that use the
+# DC as their resolver.
+- name: Set the DNS forwarder in smb.conf
+  ansible.builtin.lineinfile:
+    path: /etc/samba/smb.conf
+    insertafter: '^\[global\]'
+    regexp: '^\s*dns forwarder\s*='
+    line: "\tdns forwarder = {{ samba_dc_build_dns_forwarder }}"
+  notify: samba_ad_dc reboot
+
 # libnss-winbind is installed above but is inert until nsswitch.conf routes
 # passwd/group lookups through it. Without this, domain accounts are invisible
 # to the OS and anything that chowns a path to a domain user (home directory

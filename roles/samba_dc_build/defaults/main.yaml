@@ -16,6 +16,13 @@ samba_dc_build_ifname: enp1s0
 samba_dc_build_ntp_server: ~
 samba_dc_build_ntp_allow_network: ~
 
+# Upstream resolver the internal Samba DNS forwards to.
+# Once /etc/resolv.conf points at the DC itself, SAMBA_INTERNAL answers only for
+# the AD zone and returns SERVFAIL for everything else unless a forwarder is
+# set. The gateway is the sensible default on a lab network; override it with
+# the site resolver where the gateway does not serve DNS.
+samba_dc_build_dns_forwarder: "{{ samba_dc_build_gateway }}"
+
 # AD administrator account.
 # There is deliberately no default for the password: supply it from a
 # vault-encrypted variable. Do not reuse the SSH password (ansible_password) —

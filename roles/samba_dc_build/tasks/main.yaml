@@ -11,7 +11,8 @@
 
 # Network first: the domain provisioning registers the DC address in the
 # internal DNS zone, so the static address and the FQDN resolution must
-# already be in place when samba.yaml runs.
+# already be in place when samba.yaml runs. The resolver switchover is
+# deliberately not part of this step — see resolver.yaml.
 - name: Network configuration
   ansible.builtin.import_tasks: network.yaml
 
@@ -26,6 +27,9 @@
 
 - name: Services activation
   ansible.builtin.import_tasks: services.yaml
+
+- name: Resolver switchover
+  ansible.builtin.import_tasks: resolver.yaml
 
 # Apply the pending reboot (OS upgrade, network, provisioning) before touching
 # the directory, so that account management runs against a settled DC.
