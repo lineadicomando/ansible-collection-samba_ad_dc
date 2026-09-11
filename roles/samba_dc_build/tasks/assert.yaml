@@ -21,13 +21,17 @@
       gateway, ifname, ntp_server, ntp_allow_network.
     quiet: true
 
+# samba-tool enforces a 7 character minimum and the AD complexity rules, and it
+# does so only once provisioning starts — dozens of tasks in, behind the no_log
+# that hides the real message. Catching it here keeps the failure readable.
 - name: Make sure the AD administrator password is supplied
   ansible.builtin.assert:
     that:
-      - samba_dc_build_administrator_passwd | default("", true) | length > 0
+      - samba_dc_build_administrator_passwd | default("", true) | length >= 7
       - samba_dc_build_administrator_username | default("", true) | length > 0
     fail_msg: |
-      samba_dc_build_administrator_passwd is required and has no default.
+      samba_dc_build_administrator_passwd is required, has no default, and must
+      be at least 7 characters long and satisfy the AD complexity rules.
       Supply it from a vault-encrypted variable, for example:
         ansible-vault encrypt_string --name samba_dc_build_administrator_passwd '<password>'
       It is deliberately not derived from ansible_password: the SSH credential
