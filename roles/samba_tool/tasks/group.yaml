@@ -37,30 +37,13 @@
       ansible.builtin.include_tasks: _run.yaml
 
 - name: Ensure group present or absent
+  ansible.builtin.include_tasks: _ensure.yaml
   when: samba_tool_action in ['add', 'create', 'delete', 'absent']
-  block:
-    - name: "Check whether group exists: {{ samba_tool_args.name }}"
-      ansible.builtin.command:
-        argv: "{{ [samba_tool_bin, 'group', 'show', samba_tool_args.name] }}"
-      register: _samba_tool_group_show
-      changed_when: false
-      failed_when: false
-
-    - name: Create group {{ samba_tool_args.name }}
-      ansible.builtin.command:
-        argv: "{{ [samba_tool_bin, 'group', 'add', samba_tool_args.name] }}"
-      when:
-        - samba_tool_action in ['add', 'create']
-        - _samba_tool_group_show.rc != 0
-      changed_when: true
-
-    - name: Delete group {{ samba_tool_args.name }}
-      ansible.builtin.command:
-        argv: "{{ [samba_tool_bin, 'group', 'delete', samba_tool_args.name] }}"
-      when:
-        - samba_tool_action in ['delete', 'absent']
-        - _samba_tool_group_show.rc == 0
-      changed_when: true
+  vars:
+    _samba_tool_ensure_object: group
+    _samba_tool_ensure_name: "{{ samba_tool_args.name }}"
+    _samba_tool_ensure_mode: show
+    _samba_tool_ensure_create: add
 
 - name: Reconcile group membership
   when: samba_tool_action in ['addmembers', 'removemembers']
@@ -79,12 +62,20 @@
       register: _samba_tool_current_members
       changed_when: false
 
+    # sAMAccountNames are case-insensitive in AD, so the delta is computed on
+    # lowercased names — otherwise 'Alice' vs 'alice' would be re-applied on
+    # every run and samba-tool would fail with "already a member".
     - name: Compute the membership delta
       ansible.builtin.set_fact:
         _samba_tool_member_delta: >-
-          {{ (_samba_tool_members | difference(_samba_tool_current_members.stdout_lines))
+          {{ (_samba_tool_desired_lower | difference(_samba_tool_current_lower))
              if samba_tool_action == 'addmembers'
-             else (_samba_tool_members | intersect(_samba_tool_current_members.stdout_lines)) }}
+             else (_samba_tool_desired_lower | intersect(_samba_tool_current_lower)) }}
+      vars:
+        _samba_tool_desired_lower: >-
+          {{ _samba_tool_members | map('trim') | map('lower') | list }}
+        _samba_tool_current_lower: >-
+          {{ _samba_tool_current_members.stdout_lines | map('trim') | map('lower') | list }}
 
     - name: "Apply membership change: {{ samba_tool_action }}"
       ansible.builtin.command:

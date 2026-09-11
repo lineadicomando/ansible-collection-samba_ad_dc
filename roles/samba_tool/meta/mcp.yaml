@@ -7,7 +7,8 @@ notes: >-
   Runs on the domain controller with elevated privileges. Read-only actions
   (list, show, ...) never change state. Mutating actions on users are
   idempotent via the samba_tool_user module; group/computer/ou reconcile state
-  before acting. Use preview for destructive actions (delete, restore).
+  before acting. args.name is required for every action except list.
+  Use preview for destructive actions (delete, disable, removemembers).
 
 objects:
   user:
@@ -60,12 +61,13 @@ objects:
       homeDirectory LDAP attributes via ldbmodify, and ensures the SMB share.
     actions:
       provision:
-        args: [name, home_base, home_drive, share_name]
+        args: [name, home_base, home_drive, share_name, home_group]
         destructive: false
         note: >-
           name is required (sAMAccountName). home_base defaults to /home/samba,
-          home_drive to H:, share_name to home. The SMB share is only created
-          if it does not already exist.
+          home_drive to H:, share_name to home, home_group to "Domain Users".
+          The SMB share is created only if missing; its parameters are then
+          reconciled. Requires the account to be resolvable through NSS.
       absent:
         args: [name, home_base]
         destructive: true

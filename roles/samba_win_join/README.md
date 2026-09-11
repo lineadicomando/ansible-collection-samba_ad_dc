@@ -12,7 +12,7 @@ Joins or removes **Windows** clients from a Samba 4 AD domain using the `microso
 ## Requirements
 
 - Ansible >= 2.15
-- Collection `microsoft.ad` installed on the controller
+- Collections `microsoft.ad` and `ansible.windows` installed on the controller
 - WinRM or SSH configured on the Windows targets
 
 ## Variables
@@ -25,9 +25,18 @@ Joins or removes **Windows** clients from a Samba 4 AD domain using the `microso
 | `samba_win_join_realm` | — | AD realm in uppercase (required) |
 | `samba_win_join_search_domain` | — | DNS search domain (required) |
 | `samba_win_join_administrator_username` | `admin` | AD administrator username |
-| `samba_win_join_administrator_passwd` | `{{ ansible_password }}` | AD administrator password |
+| `samba_win_join_administrator_passwd` | — | AD administrator password (required, no default) |
 
 The `samba_win_join_realm`, `samba_win_join_search_domain`, `samba_win_join_administrator_username` and `samba_win_join_administrator_passwd` variables hold the same values used by `samba_dc_build` and are typically defined in `group_vars/all.yaml`.
+
+`samba_win_join_administrator_passwd` has no default on purpose: supply it from
+a vault-encrypted variable rather than reusing the connection credential
+(`ansible_password`), which is a different secret and is undefined with
+certificate or Kerberos authentication.
+
+```bash
+ansible-vault encrypt_string --name samba_win_join_administrator_passwd '<password>'
+```
 
 ## Example
 

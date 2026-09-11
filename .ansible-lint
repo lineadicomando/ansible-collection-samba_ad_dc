@@ -1,5 +1,8 @@
 ---
 profile: production
 
+exclude_paths:
+  - .ansible/ # locally installed copy of this collection
+
 skip_list:
   - latest[git]  # cockpit-samba-ad-dc is intentionally pulled from main branch

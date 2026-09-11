@@ -1,6 +1,6 @@
 namespace: lineadicomando
 name: samba_ad_dc
-version: 0.3.0
+version: 0.4.0
 readme: README.md
 authors:
   - Alessandro Gagliano <alessandro.gagliano@lineadicomando.it>
@@ -26,3 +26,13 @@ issues: https://github.com/lineadicomando/ansible-collection-samba_ad_dc/issues
 dependencies:
   community.general: ">=7.0.0"
   microsoft.ad: ">=1.0.0"
+  ansible.windows: ">=2.0.0"
+
+# Keep local build artefacts and the locally installed copy of this collection
+# out of the published tarball.
+build_ignore:
+  - .ansible
+  - .github
+  - "**/__pycache__"
+  - "*.pyc"
+  - tests/output

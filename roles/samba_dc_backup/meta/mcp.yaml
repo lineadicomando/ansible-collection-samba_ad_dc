@@ -26,7 +26,8 @@ objects:
         destructive: false
         note: >-
           targetdir is required. domain_type is online|offline (default offline).
-          At least one of domain or files must be true.
+          At least one of domain or files must be true. domain_password is
+          required whenever domain_username is given.
   restore:
     description: >-
       Domain restore (DESTRUCTIVE) via samba-tool domain backup restore.

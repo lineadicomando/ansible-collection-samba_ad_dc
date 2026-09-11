@@ -10,6 +10,9 @@
   register: samba_tool_result
   changed_when: false
 
+# Deliberately not covered by samba_tool_no_log: returning this output is the
+# whole point of the read-only actions. `samba-tool <object> show` does not
+# print credentials — no password hash is ever emitted.
 - name: Report command output
   ansible.builtin.debug:
     var: samba_tool_result.stdout_lines

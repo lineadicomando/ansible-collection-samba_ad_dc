@@ -5,8 +5,11 @@ samba_win_join_state: domain # domain | workgroup
 samba_win_join_reboot: true
 samba_win_join_workgroup: WORKGROUP # workgroup name used when state=workgroup
 
-# Shared with samba_dc_build — override in inventory if needed
+# Domain credentials. There is deliberately no default for the password:
+# supply it from a vault-encrypted variable rather than reusing the WinRM/SSH
+# credential (ansible_password), which is a different secret and is undefined
+# with certificate or Kerberos authentication.
 samba_win_join_administrator_username: admin
-samba_win_join_administrator_passwd: "{{ ansible_password }}"
+samba_win_join_administrator_passwd: ~
 samba_win_join_realm: ~
 samba_win_join_search_domain: ~

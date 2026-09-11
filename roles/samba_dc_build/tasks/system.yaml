@@ -5,6 +5,24 @@
     name: "{{ samba_dc_build_fqdn }}"
     use: debian
 
+# The DC must resolve its own FQDN to the static address, not to the Debian
+# default 127.0.1.1 loopback mapping: samba-tool and Kerberos derive the
+# advertised address from it.
+- name: Remove the 127.0.1.1 loopback mapping
+  ansible.builtin.lineinfile:
+    path: /etc/hosts
+    regexp: '^127\.0\.1\.1\s'
+    state: absent
+
+- name: Map the FQDN to the static address in /etc/hosts
+  ansible.builtin.lineinfile:
+    path: /etc/hosts
+    regexp: '^{{ samba_dc_build_address | regex_escape }}\s'
+    line: "{{ samba_dc_build_address }}\t{{ samba_dc_build_fqdn }} {{ samba_dc_build_fqdn.split('.') | first }}"
+    owner: root
+    group: root
+    mode: "0644"
+
 - name: Update apt cache
   ansible.builtin.apt:
     update_cache: true
@@ -16,40 +34,5 @@
 
 - name: Installing essential packages on Debian 13
   ansible.builtin.apt:
-    name:
-      - wget
-      - sudo
-      - tmux
-      - nmap
-      - telnet
-      - tcpdump
-      - rsync
-      - net-tools
-      - dnsutils
-      - btop
-      - apt-transport-https
-      - gnupg
-      - lsb-release
-      - curl
-      - neovim
-      - acl
-      - chrony
-      - htpdate
-      - cockpit
-      - pcp
-      - python3-pcp
-      - gawk
-      - libpcp-archive1
-      - libpcp-gui2
-      - libpcp-import1
-      - libpcp-mmv1
-      - libpcp-pmda-perl
-      - libpcp-pmda3
-      - libpcp-trace2
-      - libpcp-web1
-      - libpcp3
-      - libpfm4
-      - libsigsegv2
-      - pcp-conf
-      - starship
+    name: "{{ samba_dc_build_base_packages + samba_dc_build_extra_packages }}"
     state: present

@@ -1,4 +1,6 @@
 # Copyright: (c) 2026, Alessandro Gagliano <alessandro.gagliano@lineadicomando.it>
+# GNU General Public License v3.0+
+# (see https://www.gnu.org/licenses/gpl-3.0.txt)
 # SPDX-License-Identifier: GPL-3.0-or-later
 from __future__ import annotations
 
@@ -88,7 +90,7 @@ options:
       - Name of the group to set as the user's primary group (C(primaryGroupID)).
       - The group must exist. If the user is not yet a member it is added
         automatically before the primary group is set.
-      - Applied on every run when set (idempotent: no-op if already correct).
+      - Applied on every run when set, and is a no-op when already correct.
       - Requires C(ldbmodify) on the domain controller. Only applies when
         O(state=present).
     type: str
@@ -104,6 +106,11 @@ options:
     type: path
 author:
   - Alessandro Gagliano (@lineadicomando)
+notes:
+  - Passwords are handed to C(samba-tool) as command line arguments, because it
+    offers no way to read them from stdin or from a file. They are therefore
+    visible in the process list of the domain controller for the duration of the
+    call. Restrict local shell access on the DC accordingly.
 """
 
 EXAMPLES = r"""
@@ -156,6 +163,8 @@ commands:
   sample: ["user create alice", "user enable alice"]
 """
 
+import base64
+
 from ansible.module_utils.basic import AnsibleModule
 
 # ACCOUNTDISABLE flag in userAccountControl.
@@ -177,28 +186,37 @@ _CREATE_ATTR_FLAGS = {
 def _parse_ldif(text):
     """Parse the simple LDIF emitted by `samba-tool user show` into a dict.
 
-    Handles RFC 2849 line folding (continuation lines start with a space).
+    Handles RFC 2849 line folding (continuation lines start with a space) and
+    base64-encoded values (`attribute:: <base64>`), which samba-tool emits
+    whenever a value is not safe ASCII.
     Returns the last value seen for each attribute, which is sufficient for the
-    single-valued attributes we inspect (userAccountControl).
+    single-valued attributes we inspect (userAccountControl, objectSid, dn).
     """
-    attrs = {}
-    current_key = None
-    current_val = []
+    entries = []
+    open_entry = None
     for raw in text.splitlines():
-        if raw.startswith(" ") and current_key is not None:
-            current_val.append(raw[1:])
+        if raw.startswith(" ") and open_entry is not None:
+            open_entry[2].append(raw[1:])
             continue
-        if current_key is not None:
-            attrs[current_key] = "".join(current_val).strip()
         if ":" not in raw:
-            current_key = None
-            current_val = []
+            open_entry = None
             continue
-        key, _, val = raw.partition(":")
-        current_key = key.strip()
-        current_val = [val[1:] if val.startswith(" ") else val]
-    if current_key is not None:
-        attrs[current_key] = "".join(current_val).strip()
+        key, val = raw.split(":", 1)
+        encoded = val.startswith(":")
+        if encoded:
+            val = val[1:]
+        open_entry = (key.strip(), encoded, [val[1:] if val.startswith(" ") else val])
+        entries.append(open_entry)
+
+    attrs = {}
+    for key, encoded, chunks in entries:
+        value = "".join(chunks).strip()
+        if encoded:
+            try:
+                value = base64.b64decode(value).decode("utf-8", "replace")
+            except ValueError:
+                pass
+        attrs[key] = value
     return attrs
 
 
@@ -264,6 +282,10 @@ class SambaUser:
         if rc != 0:
             self.module.fail_json(msg="Group not found: %s" % group_name)
         sid = _parse_ldif(out).get("objectSid", "")
+        if not sid.startswith("S-1-"):
+            self.module.fail_json(
+                msg="Unexpected objectSid format for group %s: %r" % (group_name, sid)
+            )
         try:
             return int(sid.rsplit("-", 1)[-1])
         except (ValueError, IndexError):

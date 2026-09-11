@@ -13,6 +13,9 @@
       samba_win_join_state must be 'domain' or 'workgroup' (current: {{ samba_win_join_state }}).
       Required in group_vars/all: samba_win_join_realm, samba_win_join_search_domain,
       samba_win_join_administrator_username, samba_win_join_administrator_passwd.
+      samba_win_join_administrator_passwd has no default: supply it from a
+      vault-encrypted variable, e.g.
+        ansible-vault encrypt_string --name samba_win_join_administrator_passwd '<password>'
     quiet: true
 
 - name: "Manage domain membership — {{ samba_win_join_realm }}"

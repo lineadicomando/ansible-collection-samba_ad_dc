@@ -1,0 +1,41 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+---
+argument_specs:
+  main:
+    short_description: Join or leave a Samba 4 AD domain on Windows targets
+    description:
+      - Wraps M(microsoft.ad.membership) to join a Windows host to the domain
+        provisioned by the samba_dc_build role, or to move it back to a
+        workgroup.
+    options:
+      samba_win_join_state:
+        description: Whether the host must be a domain member or a workgroup member.
+        type: str
+        default: domain
+        choices: [domain, workgroup]
+      samba_win_join_reboot:
+        description: Let the module reboot the host when the membership change requires it.
+        type: bool
+        default: true
+      samba_win_join_workgroup:
+        description: Workgroup to join when O(samba_win_join_state=workgroup).
+        type: str
+        default: WORKGROUP
+      samba_win_join_realm:
+        description: Kerberos realm in uppercase, e.g. EXAMPLE.COM.
+        type: str
+        required: true
+      samba_win_join_search_domain:
+        description: DNS domain name of the AD domain, e.g. example.com.
+        type: str
+        required: true
+      samba_win_join_administrator_username:
+        description: Domain account used to perform the join or unjoin.
+        type: str
+        default: admin
+      samba_win_join_administrator_passwd:
+        description:
+          - Password of the domain account. Required, with no default — supply
+            it from a vault-encrypted variable.
+        type: str
+        required: true

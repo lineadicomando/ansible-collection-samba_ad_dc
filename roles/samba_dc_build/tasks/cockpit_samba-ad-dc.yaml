@@ -9,21 +9,41 @@
       - make
     state: present
 
+# Built as root from a remote repository: keep the working copy out of the
+# world-writable /tmp and pin samba_dc_build_cockpit_version to a tag or commit
+# for reproducible, reviewable builds.
+- name: Directory for the cockpit-samba-ad-dc working copy
+  ansible.builtin.file:
+    path: "{{ samba_dc_build_cockpit_src }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0750"
+
 - name: Clone cockpit-samba-ad-dc repository
   ansible.builtin.git:
-    repo: https://github.com/lineadicomando/cockpit-samba-ad-dc.git
-    dest: /tmp/cockpit-samba-ad-dc
-    version: HEAD
+    repo: "{{ samba_dc_build_cockpit_repo }}"
+    dest: "{{ samba_dc_build_cockpit_src }}"
+    version: "{{ samba_dc_build_cockpit_version }}"
+  register: samba_dc_build_cockpit_clone
+
+- name: Check whether the cockpit plugin is already installed
+  ansible.builtin.stat:
+    path: /usr/share/cockpit/samba-ad-dc
+  register: samba_dc_build_cockpit_installed
 
 - name: Install npm dependencies
   ansible.builtin.command:
     cmd: npm install
-    chdir: /tmp/cockpit-samba-ad-dc
-    creates: /tmp/cockpit-samba-ad-dc/node_modules
+    chdir: "{{ samba_dc_build_cockpit_src }}"
+  when: samba_dc_build_cockpit_clone.changed or not samba_dc_build_cockpit_installed.stat.exists
+  changed_when: true
 
+# Rebuild whenever the checkout moved: keying this on the installed path alone
+# would clone new revisions and never install them.
 - name: Build and install cockpit-samba-ad-dc
   ansible.builtin.command:
     cmd: make install
-    chdir: /tmp/cockpit-samba-ad-dc
-    creates: /usr/share/cockpit/samba-ad-dc
-  become: true
+    chdir: "{{ samba_dc_build_cockpit_src }}"
+  when: samba_dc_build_cockpit_clone.changed or not samba_dc_build_cockpit_installed.stat.exists
+  changed_when: true

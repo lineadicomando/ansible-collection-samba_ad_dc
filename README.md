@@ -17,6 +17,8 @@ After provisioning, open `https://<dc-fqdn>:9090` to access **[cockpit-samba-ad-
 - A hardened nftables firewall with only the ports required by AD
 - Chrony configured as authoritative NTP for domain clients
 - **[cockpit-samba-ad-dc](https://github.com/lineadicomando/cockpit-samba-ad-dc)** — browser UI for AD management on port 9090
+- Idempotent day-two management of users, groups, computers, OUs and home directories
+- Domain backup and restore
 - Roles for joining Windows (and soon Linux) clients to the domain
 
 ## Roles
@@ -24,28 +26,39 @@ After provisioning, open `https://<dc-fqdn>:9090` to access **[cockpit-samba-ad-
 | Role | Target | Purpose |
 |------|--------|---------|
 | [`samba_dc_build`](roles/samba_dc_build/README.md) | Debian Trixie (13) | Provision a full Samba 4 AD DC with Cockpit web UI |
+| [`samba_tool`](roles/samba_tool/README.md) | Debian Trixie (13) | Manage domain objects: users, groups, computers, OUs, home directories |
+| [`samba_dc_backup`](roles/samba_dc_backup/README.md) | Debian Trixie (13) | Back up the domain and user files; restore a domain |
 | [`samba_win_join`](roles/samba_win_join/README.md) | Windows (all) | Join or remove Windows clients from the domain |
+| [`samba_win_status`](roles/samba_win_status/README.md) | Windows (all) | Report domain/workgroup membership (read-only) |
 | `deb_join` *(coming soon)* | Debian / Ubuntu | Join or remove Linux clients from the domain |
+
+## Modules
+
+| Module | Purpose |
+|--------|---------|
+| `samba_tool_user` | Idempotent management of domain users (create, delete, enable/disable, password, primary group), with check mode and diff |
 
 ## MCP service
 
-The collection ships machine-readable catalogs (`meta/mcp.yaml`) that expose two **MCP tools**, usable by any MCP-compatible client (Claude, Cursor, and similar):
+The collection ships machine-readable catalogs (`meta/mcp.yaml`) and an [MCP server](mcp/README.md) that expose three **MCP tools**, usable by any MCP-compatible client (Claude, Cursor, and similar):
 
 | Tool | Role | What it manages |
 |------|------|-----------------|
-| `samba` | `samba_tool` | Domain objects: users, groups, computers, OUs |
+| `samba` | `samba_tool` | Domain objects: users, groups, computers, OUs, home directories |
 | `samba_dc_backup` | `samba_dc_backup` | Domain backup (online/offline) and destructive restore |
+| `samba_win_status` | `samba_win_status` | Domain/workgroup membership of Windows hosts (read-only) |
 
 ### `samba` — AD objects
 
 | Object | Available actions |
 |--------|------------------|
-| `user` | `list`, `show`, `create`, `present`, `delete`, `absent`, `enable`, `disable`, `setpassword` |
+| `user` | `list`, `show`, `create`, `present`, `delete`, `absent`, `enable`, `disable`, `setpassword`, `setprimarygroup` |
 | `group` | `list`, `show`, `listmembers`, `add`, `create`, `delete`, `absent`, `addmembers`, `removemembers` |
 | `computer` | `list`, `show`, `create`, `delete`, `absent` |
 | `ou` | `list`, `listobjects`, `create`, `delete`, `absent` |
+| `home` | `provision`, `absent` |
 
-Read-only actions (`list`, `show`, `listmembers`, `listobjects`) never change state. Destructive actions (`delete`, `absent`, `setpassword`, `disable`) are flagged in the catalog and should be previewed before execution.
+Read-only actions (`list`, `show`, `listmembers`, `listobjects`) never change state. Destructive actions (`delete`, `absent`, `setpassword`, `disable`, `removemembers`) are flagged in the catalog and should be previewed before execution.
 
 ### `samba_dc_backup` — Backup & restore
 
@@ -54,11 +67,17 @@ Read-only actions (`list`, `show`, `listmembers`, `listobjects`) never change st
 | `backup` | `run` | Archives the domain (online/offline) and/or user files |
 | `restore` | `run` | **Destructive** — rebuilds the DC from a backup; requires `restore_confirm: true` |
 
+### `samba_win_status` — Windows membership
+
+| Object | Action | Note |
+|--------|--------|------|
+| `status` | `query` | Read-only; returns hostname, `part_of_domain`, domain or workgroup |
+
 ## Requirements
 
 - Ansible >= 2.15
 - Collection `community.general >= 7.0.0`
-- Collection `microsoft.ad >= 1.0.0` (required only for `samba_win_join`)
+- Collections `microsoft.ad >= 1.0.0` and `ansible.windows >= 2.0.0` (required only for the Windows roles)
 - DC target: Debian Trixie (13)
 - Windows target: any version supported by `microsoft.ad.membership`
 
@@ -83,6 +102,10 @@ samba_dc_build_gateway: 192.168.1.1
 samba_dc_build_ifname: enp1s0
 samba_dc_build_ntp_server: pool.ntp.org
 samba_dc_build_ntp_allow_network: 192.168.1.0/24
+# Required, no default — keep it in a vault
+samba_dc_build_administrator_passwd: !vault |
+  $ANSIBLE_VAULT;1.1;AES256
+  ...
 ```
 
 ## Playbook example
@@ -98,6 +121,28 @@ samba_dc_build_ntp_allow_network: 192.168.1.0/24
   hosts: windows_clients
   roles:
     - lineadicomando.samba_ad_dc.samba_win_join
+```
+
+Day-two operations are also available as dispatcher playbooks, callable by FQCN:
+
+```bash
+# Create a user
+ansible-playbook lineadicomando.samba_ad_dc.samba \
+  -e '{"target_hosts":"dc","samba_tool_object":"user","samba_tool_action":"create",
+       "samba_tool_args":{"name":"alice","password":"..."}}'
+
+# Back up the domain
+ansible-playbook lineadicomando.samba_ad_dc.samba_dc_backup \
+  -e '{"target_hosts":"dc","samba_dc_backup_action":"backup",
+       "samba_dc_backup_targetdir":"/srv/samba-backup"}'
+```
+
+## Development
+
+```bash
+ansible-lint                     # profile: production
+ansible-test sanity --docker     # from within ansible_collections/lineadicomando/samba_ad_dc
+ansible-test units --docker
 ```
 
 ## License

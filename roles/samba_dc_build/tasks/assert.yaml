@@ -14,10 +14,33 @@
       - samba_dc_build_ifname | default("", true) | length > 0
       - samba_dc_build_ntp_server | default("", true) | length > 0
       - samba_dc_build_ntp_allow_network | default("", true) | length > 0
-      - samba_dc_build_administrator_passwd | default("", true) | length > 0
     fail_msg: |
       Missing or null required variables in the samba_dc_build role.
       Verify that host_vars/{{ inventory_hostname }}.yaml contains all samba_dc_build_* variables.
       Required variables: realm, domain, fqdn, search_domain, nameserver, address, netmask,
-      gateway, ifname, ntp_server, ntp_allow_network, administrator_passwd.
+      gateway, ifname, ntp_server, ntp_allow_network.
+    quiet: true
+
+- name: Make sure the AD administrator password is supplied
+  ansible.builtin.assert:
+    that:
+      - samba_dc_build_administrator_passwd | default("", true) | length > 0
+      - samba_dc_build_administrator_username | default("", true) | length > 0
+    fail_msg: |
+      samba_dc_build_administrator_passwd is required and has no default.
+      Supply it from a vault-encrypted variable, for example:
+        ansible-vault encrypt_string --name samba_dc_build_administrator_passwd '<password>'
+      It is deliberately not derived from ansible_password: the SSH credential
+      and the domain administrator credential must be managed separately.
+    quiet: true
+
+- name: Make sure the FQDN is fully qualified and matches the search domain
+  ansible.builtin.assert:
+    that:
+      - samba_dc_build_fqdn.split('.') | length > 1
+      - samba_dc_build_fqdn.endswith('.' ~ samba_dc_build_search_domain)
+    fail_msg: >-
+      samba_dc_build_fqdn ('{{ samba_dc_build_fqdn }}') must be a fully qualified
+      name inside samba_dc_build_search_domain ('{{ samba_dc_build_search_domain }}'),
+      e.g. dc01.{{ samba_dc_build_search_domain }}.
     quiet: true

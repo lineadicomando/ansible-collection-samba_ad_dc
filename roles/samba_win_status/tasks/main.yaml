@@ -13,21 +13,33 @@
   register: _samba_win_status_raw
   changed_when: false
 
+- name: Make sure the query returned a result
+  ansible.builtin.assert:
+    that: _samba_win_status_raw.output | default([], true) | length > 0
+    fail_msg: "Win32_ComputerSystem returned no data on {{ inventory_hostname }}."
+    quiet: true
+
+# Reporting reads this internal variable rather than the public fact, so that
+# the summary still works with samba_win_status_set_fact disabled.
+- name: Set the internal membership result
+  ansible.builtin.set_fact:
+    _samba_win_status_result: "{{ _samba_win_status_raw.output[0] }}"
+
 - name: Set samba_win_status fact  # noqa: var-naming[no-role-prefix]
   ansible.builtin.set_fact:
-    samba_win_status: "{{ _samba_win_status_raw.output[0] }}"
+    samba_win_status: "{{ _samba_win_status_result }}"
   when: samba_win_status_set_fact | bool
 
 - name: Report — joined to domain
   ansible.builtin.debug:
-    msg: "{{ inventory_hostname }} is joined to domain '{{ samba_win_status.domain }}'"
+    msg: "{{ inventory_hostname }} is joined to domain '{{ _samba_win_status_result.domain }}'"
   when:
     - samba_win_status_verbose | bool
-    - samba_win_status.part_of_domain | bool
+    - _samba_win_status_result.part_of_domain | bool
 
 - name: Report — member of workgroup
   ansible.builtin.debug:
-    msg: "{{ inventory_hostname }} is in workgroup '{{ samba_win_status.workgroup }}'"
+    msg: "{{ inventory_hostname }} is in workgroup '{{ _samba_win_status_result.workgroup }}'"
   when:
     - samba_win_status_verbose | bool
-    - not (samba_win_status.part_of_domain | bool)
+    - not (_samba_win_status_result.part_of_domain | bool)

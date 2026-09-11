@@ -9,20 +9,28 @@
 - name: Bash customizations
   ansible.builtin.import_tasks: bash.yaml
 
+# Network first: the domain provisioning registers the DC address in the
+# internal DNS zone, so the static address and the FQDN resolution must
+# already be in place when samba.yaml runs.
+- name: Network configuration
+  ansible.builtin.import_tasks: network.yaml
+
 - name: Samba provisioning
   ansible.builtin.import_tasks: samba.yaml
 
 - name: Kerberos configuration
   ansible.builtin.import_tasks: kerberos.yaml
 
-- name: Network configuration
-  ansible.builtin.import_tasks: network.yaml
-
 - name: Firewall configuration
   ansible.builtin.import_tasks: firewall.yaml
 
 - name: Services activation
   ansible.builtin.import_tasks: services.yaml
+
+# Apply the pending reboot (OS upgrade, network, provisioning) before touching
+# the directory, so that account management runs against a settled DC.
+- name: Apply pending reboot before managing directory objects
+  ansible.builtin.meta: flush_handlers
 
 - name: Passwords
   ansible.builtin.import_tasks: passwords.yaml

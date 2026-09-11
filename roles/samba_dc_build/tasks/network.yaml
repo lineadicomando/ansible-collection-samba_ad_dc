@@ -50,10 +50,22 @@
     masked: true
   failed_when: false
 
-- name: Remove /etc/resolv.conf symlink if present
+- name: Check the status of /etc/resolv.conf
+  ansible.builtin.stat:
+    path: /etc/resolv.conf
+    follow: false # important to detect whether it is a symlink
+  register: samba_dc_build_resolv_status
+
+# Only the systemd-resolved symlink needs removing. Removing the file
+# unconditionally would make this role report changed — and notify a reboot —
+# on every single run.
+- name: Remove /etc/resolv.conf if it is a symlink
   ansible.builtin.file:
     path: /etc/resolv.conf
     state: absent
+  when:
+    - samba_dc_build_resolv_status.stat.exists
+    - samba_dc_build_resolv_status.stat.islnk
 
 - name: Set /etc/resolv.conf
   ansible.builtin.copy:

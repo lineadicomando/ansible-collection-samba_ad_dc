@@ -32,27 +32,10 @@
       ansible.builtin.include_tasks: _run.yaml
 
 - name: Ensure computer present or absent
+  ansible.builtin.include_tasks: _ensure.yaml
   when: samba_tool_action in ['create', 'delete', 'absent']
-  block:
-    - name: "Check whether computer account exists: {{ samba_tool_args.name }}"
-      ansible.builtin.command:
-        argv: "{{ [samba_tool_bin, 'computer', 'show', samba_tool_args.name] }}"
-      register: _samba_tool_computer_show
-      changed_when: false
-      failed_when: false
-
-    - name: Create computer {{ samba_tool_args.name }}
-      ansible.builtin.command:
-        argv: "{{ [samba_tool_bin, 'computer', 'create', samba_tool_args.name] }}"
-      when:
-        - samba_tool_action == 'create'
-        - _samba_tool_computer_show.rc != 0
-      changed_when: true
-
-    - name: Delete computer {{ samba_tool_args.name }}
-      ansible.builtin.command:
-        argv: "{{ [samba_tool_bin, 'computer', 'delete', samba_tool_args.name] }}"
-      when:
-        - samba_tool_action in ['delete', 'absent']
-        - _samba_tool_computer_show.rc == 0
-      changed_when: true
+  vars:
+    _samba_tool_ensure_object: computer
+    _samba_tool_ensure_name: "{{ samba_tool_args.name }}"
+    _samba_tool_ensure_mode: show
+    _samba_tool_ensure_create: create

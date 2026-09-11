@@ -80,5 +80,10 @@
     marker: "# {mark} COMPLETIONS"
     block: |
       if [ -d /etc/bashrc_completion.d ]; then
-        source /etc/bashrc_completion.d/*
+        # Source each file: `source dir/*` would pass all but the first as
+        # positional parameters to the first one.
+        for _completion in /etc/bashrc_completion.d/*; do
+          [ -r "$_completion" ] && source "$_completion"
+        done
+        unset _completion
       fi

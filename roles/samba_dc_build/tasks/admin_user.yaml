@@ -1,32 +1,27 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 ---
-- name: Check if admin user has already been created
-  ansible.builtin.stat:
-    path: /var/lib/samba/.admin_user_created
-  register: samba_dc_build_admin_user_created
-
+# Idempotency comes from the directory itself, not from a marker file: the
+# module checks whether the account exists and the membership is reconciled
+# against the current member list.
 - name: Create admin user
-  ansible.builtin.shell: |
-    samba-tool user create "$SAMBA_ADMIN_USER" "$SAMBA_ADMIN_PASS"
-  environment:
-    SAMBA_ADMIN_USER: "{{ samba_dc_build_administrator_username }}"
-    SAMBA_ADMIN_PASS: "{{ samba_dc_build_administrator_passwd }}"
+  lineadicomando.samba_ad_dc.samba_tool_user:
+    name: "{{ samba_dc_build_administrator_username }}"
+    password: "{{ samba_dc_build_administrator_passwd }}"
+    state: present
+    enabled: true
+    update_password: on_create
   no_log: true
-  changed_when: true
-  when: not samba_dc_build_admin_user_created.stat.exists
+
+- name: Read the current members of Domain Admins
+  ansible.builtin.command:
+    argv: [samba-tool, group, listmembers, Domain Admins]
+  register: samba_dc_build_domain_admins
+  changed_when: false
 
 - name: Add admin user to Domain Admins
   ansible.builtin.command:
-    cmd: samba-tool group addmembers "Domain Admins" "{{ samba_dc_build_administrator_username }}"
-  no_log: true
+    argv: [samba-tool, group, addmembers, Domain Admins, "{{ samba_dc_build_administrator_username }}"]
+  when: >-
+    samba_dc_build_administrator_username | lower
+    not in (samba_dc_build_domain_admins.stdout_lines | map('lower') | list)
   changed_when: true
-  when: not samba_dc_build_admin_user_created.stat.exists
-
-- name: Mark admin user as created
-  ansible.builtin.file:
-    path: /var/lib/samba/.admin_user_created
-    state: touch
-    owner: root
-    group: root
-    mode: "0600"
-  when: not samba_dc_build_admin_user_created.stat.exists

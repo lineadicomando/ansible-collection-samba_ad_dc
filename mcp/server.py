@@ -199,7 +199,12 @@ async def handle_call_tool(ctx: ServerRequestContext, params: CallToolRequestPar
             )
         ])
 
-    output = await asyncio.to_thread(run_command, cmd)
+    label = "-".join(
+        str(part)
+        for part in (name, arguments.get("object"), arguments.get("action"), arguments.get("l", "all"))
+        if part
+    )
+    output = await asyncio.to_thread(run_command, cmd, label)
     return CallToolResult(content=[TextContent(type="text", text=output)])
 
 

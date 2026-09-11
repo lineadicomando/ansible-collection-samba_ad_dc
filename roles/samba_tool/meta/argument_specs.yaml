@@ -5,7 +5,8 @@ argument_specs:
     short_description: Manage a Samba AD DC object via samba-tool
     description:
       - Entry point for the samba_tool role. Dispatches an action against an
-        object (user, group, computer, ou) or runs a domain backup/restore.
+        object (user, group, computer, ou) or provisions a user home directory.
+      - Domain backup and restore live in the separate samba_dc_backup role.
     options:
       samba_tool_object:
         description: The kind of object to act upon.
@@ -17,13 +18,36 @@ argument_specs:
         type: str
         required: true
       samba_tool_args:
-        description: Action-specific arguments (name, password, members, ...).
+        description:
+          - Action-specific arguments (name, password, members, ...).
+          - C(name) is required for every action except C(list).
         type: dict
         default: {}
       samba_tool_bin:
         description: Path to the samba-tool executable on the target.
         type: str
         default: samba-tool
+      samba_tool_sam_ldb_path:
+        description:
+          - Samba directory database, used by C(ldbmodify) for the attributes
+            samba-tool cannot set (primaryGroupID, homeDrive, homeDirectory).
+        type: path
+        default: /var/lib/samba/private/sam.ldb
+      samba_tool_home_share_params:
+        description:
+          - Parameters enforced on the home SMB share by
+            O(samba_tool_object=home) with O(samba_tool_action=provision).
+        type: list
+        elements: dict
+        options:
+          param:
+            description: smb.conf parameter name.
+            type: str
+            required: true
+          value:
+            description: Value the parameter must have.
+            type: str
+            required: true
       samba_tool_no_log:
         description: Hide output of tasks that may contain passwords.
         type: bool

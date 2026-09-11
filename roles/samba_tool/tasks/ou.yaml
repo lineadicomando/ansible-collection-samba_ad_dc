@@ -4,6 +4,7 @@
 #   read-only : list, listobjects
 #   mutating  : create, delete/absent  (idempotent via existence check)
 # The OU name is a DN relative to the domain base, e.g. "OU=Staff".
+# `samba-tool ou show` does not exist, so existence is checked against `ou list`.
 
 - name: Validate ou action
   ansible.builtin.assert:
@@ -33,26 +34,10 @@
       ansible.builtin.include_tasks: _run.yaml
 
 - name: Ensure ou present or absent
+  ansible.builtin.include_tasks: _ensure.yaml
   when: samba_tool_action in ['create', 'delete', 'absent']
-  block:
-    - name: List existing organizational units
-      ansible.builtin.command:
-        argv: "{{ [samba_tool_bin, 'ou', 'list'] }}"
-      register: _samba_tool_ou_list
-      changed_when: false
-
-    - name: Create ou {{ samba_tool_args.name }}
-      ansible.builtin.command:
-        argv: "{{ [samba_tool_bin, 'ou', 'create', samba_tool_args.name] }}"
-      when:
-        - samba_tool_action == 'create'
-        - samba_tool_args.name not in _samba_tool_ou_list.stdout_lines
-      changed_when: true
-
-    - name: Delete ou {{ samba_tool_args.name }}
-      ansible.builtin.command:
-        argv: "{{ [samba_tool_bin, 'ou', 'delete', samba_tool_args.name] }}"
-      when:
-        - samba_tool_action in ['delete', 'absent']
-        - samba_tool_args.name in _samba_tool_ou_list.stdout_lines
-      changed_when: true
+  vars:
+    _samba_tool_ensure_object: ou
+    _samba_tool_ensure_name: "{{ samba_tool_args.name }}"
+    _samba_tool_ensure_mode: list
+    _samba_tool_ensure_create: create
