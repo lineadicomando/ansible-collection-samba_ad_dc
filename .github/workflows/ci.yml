@@ -24,7 +24,7 @@ jobs:
           python-version: "3.12"
 
       - name: Install ansible-core and ansible-lint
-        run: pip install "ansible-core>=2.15" "ansible-lint"
+        run: pip install "ansible-core~=2.20.0" "ansible-lint~=26.4"
 
       - name: Install collection dependencies
         run: ansible-galaxy collection install community.general microsoft.ad ansible.windows
@@ -38,7 +38,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        ansible: ["2.16", "2.18"]
+        ansible: ["2.19", "2.20"]
     steps:
       # ansible-test requires the collection to sit in an
       # ansible_collections/<namespace>/<name> directory.
@@ -60,8 +60,12 @@ jobs:
         working-directory: ${{ env.COLLECTION_PATH }}
 
   units:
-    name: Unit tests
+    name: Unit tests (ansible-core ${{ matrix.ansible }})
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        ansible: ["2.19", "2.20"]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -74,7 +78,7 @@ jobs:
           python-version: "3.12"
 
       - name: Install ansible-core
-        run: pip install "ansible-core>=2.16"
+        run: pip install "ansible-core~=${{ matrix.ansible }}.0"
 
       - name: Run unit tests
         run: ansible-test units --docker --color

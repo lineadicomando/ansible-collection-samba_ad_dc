@@ -1,5 +1,27 @@
 # Changelog
 
+## Unreleased
+
+### Breaking changes
+- The minimum supported ansible-core is now 2.19, declared consistently in
+  `meta/runtime.yml`, the README and the CI matrix. 2.15 was claimed but never
+  tested, and the matrix only exercised 2.16 and 2.18, both end of life.
+
+### Fixed
+- `ansible-test` assumed the modules had to run on every Python version the
+  running ansible-core supports as a target, which on ansible-core 2.16 still
+  includes Python 2.7 and 3.6. `samba_tool_user` uses
+  `from __future__ import annotations`, so `compile`, `import`,
+  `future-import-boilerplate` and `metaclass-boilerplate` all failed. A new
+  `tests/config.yml` declares `python_requires: ">=3.7"` for modules. The unit
+  test job had the same latent failure; it only passed because its unpinned
+  `ansible-core>=2.16` resolved to a release that no longer targets Python 2.7.
+
+### Changed
+- The unit test job now runs over the same ansible-core matrix as the sanity
+  job, and the lint job pins ansible-core and ansible-lint, so neither can
+  break or heal without a change to the repository.
+
 ## v0.4.0 — 2026-08-17
 
 Review pass over the whole collection: provisioning correctness, idempotency,

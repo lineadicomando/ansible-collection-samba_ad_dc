@@ -75,7 +75,7 @@ Read-only actions (`list`, `show`, `listmembers`, `listobjects`) never change st
 
 ## Requirements
 
-- Ansible >= 2.15
+- ansible-core >= 2.19 (tested against 2.19 and 2.20)
 - Collection `community.general >= 7.0.0`
 - Collections `microsoft.ad >= 1.0.0` and `ansible.windows >= 2.0.0` (required only for the Windows roles)
 - DC target: Debian Trixie (13)
