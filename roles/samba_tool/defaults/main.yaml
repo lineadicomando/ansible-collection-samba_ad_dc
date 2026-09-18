@@ -4,7 +4,7 @@
 # Role interface: object + action + arguments.
 # The MCP/dispatcher passes these values as extra-vars.
 
-samba_tool_object: ~          # user | group | computer | ou | home
+samba_tool_object: ~          # user | group | computer | ou | home | share
 samba_tool_action: ~          # samba-tool verb: create, delete, list, show, ...
 samba_tool_args: {}           # dictionary of action-specific arguments
 
@@ -20,6 +20,10 @@ samba_tool_home_share_params:
   - {param: browseable, value: "no"}
   - {param: create mask, value: "0700"}
   - {param: directory mask, value: "0700"}
+
+# Directory holding the shared folders (object: share). Must match the one
+# used by cockpit-samba-ad-dc for the two to manage the same shares.
+samba_tool_shares_dir: /srv/samba/shares
 
 # When true, hide the output of tasks that may contain passwords.
 samba_tool_no_log: true

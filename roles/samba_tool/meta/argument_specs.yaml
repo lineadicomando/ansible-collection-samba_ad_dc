@@ -5,14 +5,15 @@ argument_specs:
     short_description: Manage a Samba AD DC object via samba-tool
     description:
       - Entry point for the samba_tool role. Dispatches an action against an
-        object (user, group, computer, ou) or provisions a user home directory.
+        object (user, group, computer, ou), provisions a user home directory or
+        manages a shared folder.
       - Domain backup and restore live in the separate samba_dc_backup role.
     options:
       samba_tool_object:
         description: The kind of object to act upon.
         type: str
         required: true
-        choices: [user, group, computer, ou, home]
+        choices: [user, group, computer, ou, home, share]
       samba_tool_action:
         description: The samba-tool verb to run (e.g. create, delete, list, show, addmembers).
         type: str
@@ -48,6 +49,13 @@ argument_specs:
             description: Value the parameter must have.
             type: str
             required: true
+      samba_tool_shares_dir:
+        description:
+          - Directory holding the shared folders managed by O(samba_tool_object=share).
+          - Must match the one used by cockpit-samba-ad-dc for the two to manage
+            the same shares.
+        type: path
+        default: /srv/samba/shares
       samba_tool_no_log:
         description: Hide output of tasks that may contain passwords.
         type: bool

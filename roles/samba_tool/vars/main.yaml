@@ -8,3 +8,4 @@ samba_tool_valid_objects:
   - computer
   - ou
   - home
+  - share

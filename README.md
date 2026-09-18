@@ -17,7 +17,7 @@ After provisioning, open `https://<dc-fqdn>:9090` to access **[cockpit-samba-ad-
 - A hardened nftables firewall with only the ports required by AD
 - Chrony configured as authoritative NTP for domain clients
 - **[cockpit-samba-ad-dc](https://github.com/lineadicomando/cockpit-samba-ad-dc)** — browser UI for AD management on port 9090
-- Idempotent day-two management of users, groups, computers, OUs and home directories
+- Idempotent day-two management of users, groups, computers, OUs, home directories and shared folders (interchangeable with the Cockpit UI, optionally mapped as network drives through a GPO)
 - Domain backup and restore
 - Roles for joining Windows (and soon Linux) clients to the domain
 
@@ -26,7 +26,7 @@ After provisioning, open `https://<dc-fqdn>:9090` to access **[cockpit-samba-ad-
 | Role | Target | Purpose |
 |------|--------|---------|
 | [`samba_dc_build`](roles/samba_dc_build/README.md) | Debian Trixie (13) | Provision a full Samba 4 AD DC with Cockpit web UI |
-| [`samba_tool`](roles/samba_tool/README.md) | Debian Trixie (13) | Manage domain objects: users, groups, computers, OUs, home directories |
+| [`samba_tool`](roles/samba_tool/README.md) | Debian Trixie (13) | Manage domain objects: users, groups, computers, OUs, home directories, shared folders |
 | [`samba_dc_backup`](roles/samba_dc_backup/README.md) | Debian Trixie (13) | Back up the domain and user files; restore a domain |
 | [`samba_win_join`](roles/samba_win_join/README.md) | Windows (all) | Join or remove Windows clients from the domain |
 | [`samba_win_status`](roles/samba_win_status/README.md) | Windows (all) | Report domain/workgroup membership (read-only) |
@@ -37,6 +37,8 @@ After provisioning, open `https://<dc-fqdn>:9090` to access **[cockpit-samba-ad-
 | Module | Purpose |
 |--------|---------|
 | `samba_tool_user` | Idempotent management of domain users (create, delete, enable/disable, password, primary group), with check mode and diff |
+| `samba_share` | Idempotent management of shared folders for domain users and groups (access, POSIX ACL, drive mapping through a GPO), with check mode and diff; same model as cockpit-samba-ad-dc |
+| `samba_share_info` | List shared folders with their access list and drive mapping |
 
 ## MCP service
 
@@ -44,7 +46,7 @@ The collection ships machine-readable catalogs (`meta/mcp.yaml`) and an [MCP ser
 
 | Tool | Role | What it manages |
 |------|------|-----------------|
-| `samba` | `samba_tool` | Domain objects: users, groups, computers, OUs, home directories |
+| `samba` | `samba_tool` | Domain objects: users, groups, computers, OUs, home directories, shared folders |
 | `samba_dc_backup` | `samba_dc_backup` | Domain backup (online/offline) and destructive restore |
 | `samba_win_status` | `samba_win_status` | Domain/workgroup membership of Windows hosts (read-only) |
 
@@ -57,8 +59,9 @@ The collection ships machine-readable catalogs (`meta/mcp.yaml`) and an [MCP ser
 | `computer` | `list`, `show`, `create`, `delete`, `absent` |
 | `ou` | `list`, `listobjects`, `create`, `delete`, `absent` |
 | `home` | `provision`, `absent` |
+| `share` | `list`, `show`, `create`, `present`, `grant`, `revoke`, `delete`, `absent` |
 
-Read-only actions (`list`, `show`, `listmembers`, `listobjects`) never change state. Destructive actions (`delete`, `absent`, `setpassword`, `disable`, `removemembers`) are flagged in the catalog and should be previewed before execution.
+Read-only actions (`list`, `show`, `listmembers`, `listobjects`) never change state. Destructive actions (`delete`, `absent`, `setpassword`, `disable`, `removemembers`, `revoke`) are flagged in the catalog and should be previewed before execution.
 
 ### `samba_dc_backup` — Backup & restore
 

@@ -2,6 +2,23 @@
 
 ## Unreleased
 
+### Added
+- Shared folders, compatible with the **Shared folders** tab of
+  cockpit-samba-ad-dc: the same folders under `/srv/samba/shares`, the same
+  registry shares and POSIX ACL, and the same **Cockpit - Mapped drives** GPO for
+  mapping a share as a network drive at logon. A share created from Ansible
+  shows up in Cockpit and vice versa.
+  - `samba_share` module: create, update and delete shares, with access
+    `replace`/`append`/`remove`, drive mapping, check mode and diff. Idempotency
+    compares access lists regardless of order and case, the folder ACL by
+    uid/gid (so `Domain Users`, mapped to a local gid, works) and drive mappings
+    by target SID; ACL drift on the share folder is repaired.
+  - `samba_share_info` module: list shares with their access and drive mapping.
+  - `samba_tool` role: `share` object with `list`, `show`, `create`/`present`,
+    `grant`, `revoke`, `delete`/`absent`, and the `read`/`write` shorthands;
+    new variable `samba_tool_shares_dir`.
+  - `samba` MCP tool: `share` object.
+
 ### Breaking changes
 - The minimum supported ansible-core is now 2.19, declared consistently in
   `meta/runtime.yml`, the README and the CI matrix. 2.15 was claimed but never

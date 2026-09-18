@@ -2,7 +2,8 @@
 # Role: samba_tool
 
 A wrapper around `samba-tool` to manage the objects of a Samba 4 AD DC (users,
-groups, computers, OUs) and to provision user home directories. Designed to be
+groups, computers, OUs), to provision user home directories and to manage
+shared folders. Designed to be
 driven both from playbooks and from the `samba` MCP tool.
 
 Domain backup and restore live in the separate
@@ -15,12 +16,13 @@ It runs **on the domain controller** and requires elevated privileges
 
 | Variable | Description |
 |----------|-------------|
-| `samba_tool_object` | `user` \| `group` \| `computer` \| `ou` \| `home` |
+| `samba_tool_object` | `user` \| `group` \| `computer` \| `ou` \| `home` \| `share` |
 | `samba_tool_action` | samba-tool verb (`create`, `delete`, `list`, `show`, `addmembers`, …) |
 | `samba_tool_args` | dictionary of action-specific arguments. `name` is required for every action except `list` |
 | `samba_tool_bin` | path to the executable (default `samba-tool`) |
 | `samba_tool_sam_ldb_path` | directory database used by `ldbmodify` (default `/var/lib/samba/private/sam.ldb`) |
 | `samba_tool_home_share_params` | parameters enforced on the home SMB share |
+| `samba_tool_shares_dir` | directory holding the shared folders (default `/srv/samba/shares`) |
 | `samba_tool_no_log` | hide the output of tasks containing passwords (default `true`) |
 
 ## Actions
@@ -32,6 +34,7 @@ It runs **on the domain controller** and requires elevated privileges
 | `computer` | `list`, `show`, `create`, `delete`, `absent` |
 | `ou` | `list`, `listobjects`, `create`, `delete`, `absent` |
 | `home` | `provision`, `absent` |
+| `share` | `list`, `show`, `create`, `present`, `grant`, `revoke`, `delete`, `absent` |
 
 ## Idempotency
 
@@ -45,6 +48,11 @@ It runs **on the domain controller** and requires elevated privileges
 - **home**: the LDAP attributes are read back and only rewritten when they
   differ; the SMB share parameters converge to
   `samba_tool_home_share_params`.
+- **share**: delegated to the
+  [`samba_share`](../../plugins/modules/samba_share.py) module, with check_mode
+  and diff. Access lists are compared regardless of order and case, the ACL of
+  the share folder by uid/gid, and the drive mapping by its target SIDs, so a
+  share saved from Cockpit in a different order is not rewritten.
 
 ## Home directories
 
@@ -64,6 +72,41 @@ The directory is owned by the domain account, so domain accounts must be
 resolvable through NSS. The `samba_dc_build` role configures this by adding
 `winbind` to the `passwd`/`group` lines of `/etc/nsswitch.conf`; the role fails
 with an explicit message when the lookup does not work.
+
+## Shared folders
+
+`object: share` manages the same shared folders as the **Shared folders** tab of
+[cockpit-samba-ad-dc](https://github.com/lineadicomando/cockpit-samba-ad-dc):
+a share created here appears in Cockpit and vice versa.
+
+- Each folder is `<samba_tool_shares_dir>/<name>` (default
+  `/srv/samba/shares/<name>`), shared as a registry share (`net conf`).
+  Registry shares whose path lies elsewhere — the home share, hand-made shares —
+  are never touched.
+- Access is enforced by the share (`valid users`, plus `read list` for read-only
+  entries) and by a POSIX ACL on the folder tree, from which Samba derives the
+  Windows ACL.
+- A share can be mapped as a network drive at logon for the same users and
+  groups, through the **Cockpit - Mapped drives** GPO linked to the domain root
+  (created on first use). Windows clients pick up changes at the next logon or
+  `gpupdate`.
+
+| Argument | Actions | Description |
+|----------|---------|-------------|
+| `name` | all but `list` | share name (required) |
+| `access` | `create`, `present`, `grant`, `revoke` | list of `{name, kind, level}`: `kind` is `user` or `group` (looked up when omitted), `level` is `read` (default) or `write` |
+| `read`, `write` | same | shorthands: lists (or comma-separated strings) of names |
+| `comment` | `create`, `present` | description; `""` removes it |
+| `browseable` | `create`, `present` | listed when browsing (default `true` for a new share) |
+| `drive_letter` | `create`, `present` | E–Z except H (home directories); `""` removes the mapping |
+| `drive_label` | `create`, `present` | drive label (default: the share name) |
+| `delete_data` | `delete`, `absent` | also delete the folder and its contents (default `false`) |
+
+`create`/`present` replace the access list when one is given and keep it
+otherwise; `grant` adds entries or changes their level; `revoke` removes them.
+A share always keeps at least one user or group, since an empty `valid users`
+would open it to every domain user. Settings left out are not changed on an
+existing share; an existing drive mapping follows access list changes.
 
 ## Examples
 
@@ -98,6 +141,21 @@ with an explicit message when the lookup does not work.
     samba_tool_action: provision
     samba_tool_args:
       name: alice
+```
+
+```yaml
+# Share a folder: read-write for teachers, read-only for students, drive M:
+- import_role:
+    name: lineadicomando.samba_ad_dc.samba_tool
+  vars:
+    samba_tool_object: share
+    samba_tool_action: create
+    samba_tool_args:
+      name: Materiali
+      comment: Class materials
+      write: [Teachers]
+      read: [Students]
+      drive_letter: M
 ```
 
 Or via the FQCN playbook shipped with the collection:

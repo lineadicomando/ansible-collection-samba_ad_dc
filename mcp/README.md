@@ -7,7 +7,7 @@ to `ansible-playbook` by hand.
 
 | Tool | Playbook | What it manages |
 |------|----------|-----------------|
-| `samba` | `lineadicomando.samba_ad_dc.samba` | users, groups, computers, OUs, home directories |
+| `samba` | `lineadicomando.samba_ad_dc.samba` | users, groups, computers, OUs, home directories, shared folders |
 | `samba_dc_backup` | `lineadicomando.samba_ad_dc.samba_dc_backup` | domain backup (online/offline) and destructive restore |
 | `samba_win_status` | `lineadicomando.samba_ad_dc.samba_win_status` | domain/workgroup membership of Windows hosts (read-only) |
 

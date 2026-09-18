@@ -52,10 +52,10 @@ def _get_tools() -> list[Tool]:
             description=(
                 "Manage the Samba AD Domain Controller via samba-tool, through the "
                 "lineadicomando.samba_ad_dc.samba playbook. "
-                "Objects: user, group, computer, ou, home. "
+                "Objects: user, group, computer, ou, home, share. "
                 "Read-only actions (list, show, listmembers, listobjects) never change "
                 "state. Mutating user actions are idempotent. "
-                "Destructive actions (delete, absent, disable, removemembers) "
+                "Destructive actions (delete, absent, disable, removemembers, revoke) "
                 "should be run with preview first to confirm with the user. "
                 "args.name is required for every action except list. "
                 "Common actions per object: "
@@ -70,14 +70,27 @@ def _get_tools() -> list[Tool]:
                 "attributes, and ensures the SMB share exists. "
                 "home args: name (required), home_base (default /home/samba), "
                 "home_drive (default H:), share_name (default home), "
-                "home_group (default Domain Users)."
+                "home_group (default Domain Users). "
+                "share [list, show, create, present, grant, revoke, delete, absent] — "
+                "folders shared with domain users and groups, interchangeable with the "
+                "Shared folders tab of cockpit-samba-ad-dc: /srv/samba/shares/<name>, "
+                "access enforced by the share and a POSIX ACL, optionally mapped as a "
+                "network drive at logon through a GPO. "
+                "share args: name (required except list); access, a list of "
+                "{name, kind (user|group, looked up when omitted), level (read|write, "
+                "default read)}, or the shorthands read and write (lists of names); "
+                "comment; browseable (bool); drive_letter (E-Z except H, \"\" removes "
+                "the mapping); drive_label; delete_data (bool, delete/absent only, "
+                "default false keeps the folder on disk). create/present replace the "
+                "access list when one is given; grant adds or changes entries; revoke "
+                "removes them."
             ),
             inputSchema={
                 "type": "object",
                 "properties": {
                     "object": {
                         "type": "string",
-                        "enum": ["user", "group", "computer", "ou", "home"],
+                        "enum": ["user", "group", "computer", "ou", "home", "share"],
                         "description": "The kind of AD object to act upon.",
                     },
                     "action": {
@@ -90,7 +103,9 @@ def _get_tools() -> list[Tool]:
                             "Action-specific arguments, e.g. "
                             "{\"name\": \"alice\", \"password\": \"...\"} or "
                             "{\"name\": \"staff\", \"members\": [\"alice\", \"bob\"]} or "
-                            "{\"name\": \"alice\", \"home_base\": \"/home/samba\"}."
+                            "{\"name\": \"alice\", \"home_base\": \"/home/samba\"} or "
+                            "{\"name\": \"Materiali\", \"write\": [\"Teachers\"], "
+                            "\"read\": [\"Students\"], \"drive_letter\": \"M\"}."
                         ),
                         "default": {},
                     },

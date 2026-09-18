@@ -8,7 +8,7 @@ notes: >-
   (list, show, ...) never change state. Mutating actions on users are
   idempotent via the samba_tool_user module; group/computer/ou reconcile state
   before acting. args.name is required for every action except list.
-  Use preview for destructive actions (delete, disable, removemembers).
+  Use preview for destructive actions (delete, disable, removemembers, revoke).
 
 objects:
   user:
@@ -72,3 +72,50 @@ objects:
         args: [name, home_base]
         destructive: true
         note: Removes the physical directory and clears the LDAP attributes.
+  share:
+    description: >-
+      Shared folders for domain users and groups, in the model of
+      cockpit-samba-ad-dc: a registry share under /srv/samba/shares/<name>,
+      access enforced by valid users/read list and a POSIX ACL on the folder
+      tree, optionally mapped as a network drive at logon through the
+      "Cockpit - Mapped drives" GPO. Shares created here and in Cockpit are
+      interchangeable; shares outside /srv/samba/shares are never touched.
+      Access: args.access is a list of {name, kind (user|group, read from the
+      directory when omitted), level (read|write, default read)}; args.read and
+      args.write are shorthands taking lists of names.
+    actions:
+      list: { args: [], readonly: true }
+      show: { args: [name], readonly: true }
+      create:
+        args: [name, access, read, write, comment, browseable, drive_letter, drive_label]
+        destructive: false
+        note: >-
+          Creates the share or converges an existing one. The given access list
+          replaces the current one; omit it to keep the current access.
+          drive_letter is E-Z except H (home directories); "" removes the
+          mapping; omitted keeps the current one. drive_label defaults to the
+          share name. comment "" removes the comment.
+      present:
+        args: [name, access, read, write, comment, browseable, drive_letter, drive_label]
+        destructive: false
+        note: Same as create.
+      grant:
+        args: [name, access, read, write]
+        destructive: false
+        note: Adds the listed users/groups, or changes their level; others are kept.
+      revoke:
+        args: [name, access, read, write]
+        destructive: true
+        note: >-
+          Removes the listed users/groups (their level is ignored). A share
+          must keep at least one user or group.
+      delete:
+        args: [name, delete_data]
+        destructive: true
+        note: >-
+          Removes the share and its drive mapping. The folder is kept on disk
+          unless delete_data is true.
+      absent:
+        args: [name, delete_data]
+        destructive: true
+        note: Same as delete.
