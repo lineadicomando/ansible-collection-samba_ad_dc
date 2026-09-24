@@ -44,6 +44,12 @@ argument_specs:
         description: Default gateway.
         type: str
         required: true
+      samba_dc_build_dns_forwarder:
+        description:
+          - Upstream resolver the internal Samba DNS forwards non-authoritative
+            queries to. Defaults to the gateway.
+        type: str
+        default: "{{ samba_dc_build_gateway }}"
       samba_dc_build_ifname:
         description: Name of the network interface to configure.
         type: str
